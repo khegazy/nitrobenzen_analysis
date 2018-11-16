@@ -88,6 +88,7 @@ parameterClass::parameterClass(std::string runName) {
   rMaxAzmRat    = 0.07; //0.052;
   padDecayRat   = 0.5;
   filterVar     = std::pow(NradAzmBins/3.25, 2);
+  lowQfillSimScale = 0.3;
 
 
   subtractReference = true;
@@ -96,6 +97,7 @@ parameterClass::parameterClass(std::string runName) {
   // Simulation parameters
   compareSims     = false;
   simPairCorr     = true;
+  getBonds        = true;
   simPltVerbose   = false;
   NradSimBins     = NradAzmBins;
   Iebeam          = 5;
@@ -103,6 +105,7 @@ parameterClass::parameterClass(std::string runName) {
   screenDist      = 4;
   xyzDir          = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/XYZfiles/";
   simOutputDir    = "/reg/ued/ana/scratch/nitroBenzene/simulations/";
+  finalState      = "phenoxyRadical";
 
   NavgCenters = 15;
   centerFxnType = 2;
@@ -206,7 +209,8 @@ parameterClass::parameterClass(std::string runName) {
 
   }
   else if ((runName.compare("20180701_0746") == 0)
-            || (runName.compare("20180701_0738") == 0)) {
+            || (runName.compare("20180701_0738") == 0)
+            || (runName.compare("20180701") == 0)) {
 
     // Image parameters
     QperPix = 0.0223;
@@ -394,7 +398,8 @@ parameterClass::parameterClass(std::string runName) {
  
   }
   else if ((runName.compare("20180630_1925") == 0)
-            || (runName.compare("20180630_1917") == 0)) {
+            || (runName.compare("20180630_1917") == 0)
+            || (runName.compare("20180630") == 0)) {
 
     // Image parameters
     QperPix = 0.0223;
@@ -531,7 +536,8 @@ parameterClass::parameterClass(std::string runName) {
 
   }
   else if ((runName.compare("20180629_1630") == 0)
-            || (runName.compare("20180629_1619") == 0)) {
+            || (runName.compare("20180629_1619") == 0)
+            || (runName.compare("20180629") == 0)) {
 
     // Image parameters
     QperPix = 0.0223;
@@ -675,7 +681,8 @@ parameterClass::parameterClass(std::string runName) {
 
   }
   else if ((runName.compare("20180627_1551") == 0)
-            || (runName.compare("20180627_1116") == 0)) {
+            || (runName.compare("20180627_1116") == 0)
+            || (runName.compare("20180627") == 0)) {
 
     // Image parameters
     QperPix = 0.0223;
@@ -687,13 +694,13 @@ parameterClass::parameterClass(std::string runName) {
     padMaxHeight = 6.5;
 
     // Measurement parameters
-    timeZero = 0.375;
-    hasRef = true;
-    refStagePos = 154.0;
-    imgMatType = "uint16";
+    timeZero      = 0.375;
+    hasRef        = true;
+    refStagePos   = 154.0;
+    imgMatType    = "uint16";
+    NfinalPoints  = 7;
 
     // Bad scans
-    
     badScans.push_back(9);
     badScans.push_back(38);
     badScans.push_back(91);
@@ -870,6 +877,8 @@ parameterClass::parameterClass(std::string runName) {
     // Pressure measurements
     pressureFileName = "/reg/ued/ana/scratch/nitroBenzene/PV/pressureSampleChamber_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
 
+    throttle = 103; //uJ or 53 degrees
+
   }
   else if (runName.compare("simulateReference") == 0) {
     
@@ -909,10 +918,10 @@ parameterClass::parameterClass(std::string runName) {
   }
 
   refStagePos *= scaleStagePos;
-  maxQleg = QperPix*NradLegBins;
-  maxQazm = QperPix*NradAzmBins;
-  maxR = rMaxAzmRat*((NradAzmBins + NautCpadding)/2 + 1)
-      *(2*PI/(QperPix*(NradAzmBins + NautCpadding)));
+  maxQleg   = QperPix*NradLegBins;
+  maxQazm   = QperPix*NradAzmBins;
+  maxRbins  = rMaxAzmRat*((NradAzmBins + NautCpadding)/2 + 1);
+  maxR      = maxRbins*(2*PI/(QperPix*(NradAzmBins + NautCpadding)));
   std::cout<<"testing: "<<rMaxAzmRat<<"  "<<(NradAzmBins + NautCpadding)/2 + 1<<"  "<<QperPix<<"  "<<std::endl;
 
   R1Bin = 1/(2*PI/(QperPix*(NradAzmBins + NautCpadding)));

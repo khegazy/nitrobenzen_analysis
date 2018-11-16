@@ -20,9 +20,7 @@ DEP_OBJ_FILES := $(DEP_CPP_FILES:%.cpp=%.o)
 DEPSIM_OBJ_FILES := $(DEPSIM_CPP_FILES:%.cpp=%.o)
 LOCAL_DEP_OBJ_FILES := $(LOCAL_DEP_CPP_FILES:%.cpp=%.o)
 EXE_FILES := $(OBJ_FILES:%.o=%.exe)
-$(info $$EXE_FILES is [${EXE_FILES}])
-$(info $$DEPSIM is [${DEPSIM}])
-$(info [${%.exe: %.o $(OBJ_FILES)}])
+
 STD := -std=c++0x
 
 vpath %.cpp $(sort $(dir $(CPP_FILES)))
