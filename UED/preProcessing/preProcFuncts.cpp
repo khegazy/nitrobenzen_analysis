@@ -115,15 +115,25 @@ monthLengths[12] = 31;
     imgInfo.runType = "Run";
     if (ipos == string::npos) {
       ipos = fileName.find("Background",0);
-      ipos += 7;
-      imgInfo.runType = "Background";
+      if (ipos != string::npos) {
+        ipos += 7;
+        imgInfo.runType = "Background";
+      }
     }
     if (ipos == string::npos) {
-      std::cerr << "ERROR: Cannot find Run or Background indication!!!\n";
+      ipos = fileName.find("ower",0);
+      ipos += 5;
+      imgInfo.runType = "PowerScan";
+    }
+    if (ipos == string::npos) {
+      std::cerr << "ERROR: Cannot find Run, Background, or Power indication!!!\n";
       exit(0);
     }
 
-    if (imgInfo.date.find("2016") != string::npos) {
+    if (imgInfo.runType.compare("PowerScan") == 0) {
+      imgInfo.run = imgInfo.date;
+    }
+    else if (imgInfo.date.find("2016") != string::npos) {
       fpos = fileName.find("/", ipos);
       imgInfo.scan = stoi(fileName.substr(ipos+3, fpos-ipos-3));
     }
@@ -142,8 +152,16 @@ monthLengths[12] = 31;
     if (verbose) cout << "\tFILENAME: " << imgInfo.fileName;
 
     // Finding image number
-    ipos = imgInfo.fileName.find("-");
-    imgInfo.imgNum = stoi(imgInfo.fileName.substr(ipos+1, 3));
+    if (imgInfo.runType.compare("PowerScan") == 0) {
+      ipos = imgInfo.fileName.find("Throttle");
+      imgInfo.imgNum    = stoi(imgInfo.fileName.substr(ipos+9, 3));
+      imgInfo.throttle  = stof(imgInfo.fileName.substr(ipos+13, 8));
+    }
+    else {
+      ipos = imgInfo.fileName.find("-");
+      imgInfo.imgNum    = stoi(imgInfo.fileName.substr(ipos+1, 3));
+      imgInfo.throttle  = -1;
+    }
     if (verbose) cout << "\tIMGNUM: " << imgInfo.imgNum;
 
     // Finding stage position
@@ -194,12 +212,16 @@ monthLengths[12] = 31;
     }
 
     if (verbose) cout << endl;
-    imgInfoMap[imgInfo.stagePos] = imgInfo;
+    if (imgInfo.runType.compare("PowerScan") == 0) {
+      imgInfoMap[imgInfo.throttle*1e8+imgInfo.stagePos] = imgInfo;
+    }
+    else {
+      imgInfoMap[imgInfo.stagePos] = imgInfo;
+    }
   }
 
   for (auto itr: imgInfoMap) {
     itr.second.time = times[itr.second.imgNum-1];
-    cout<<itr.second.time<<endl;
     imgINFO.push_back(itr.second);
   }
 
