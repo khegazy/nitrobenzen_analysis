@@ -45,7 +45,7 @@ all: $(EXE_FILES)
 %.o: %.cpp $(DEPSMRG) $(LOCAL_DEPS) $(DEPS) $(DEPSIM) 
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.exe: %.o $(OBJ_FILES) $(DEP_OBJ_FILES) $(LOCAL_DEP_OBJ_FILES) $(DEPSIM_OBJ_FILES) $(DEPMRG_OBJ_FILES) 
+%.exe: %.o $(DEP_OBJ_FILES) $(LOCAL_DEP_OBJ_FILES) $(DEPSIM_OBJ_FILES) $(DEPMRG_OBJ_FILES) 
 	$(CXX) -o $@ $^ $(LINKLIBS)
 
 clean:
