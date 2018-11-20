@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 sys.path.append('../../../plots/scripts')
+sys.path.append('/reg/neh/home/khegazy/baseTools/UEDanalysis/plots/scripts')
 from plotClass import plotCLASS
 from plotParams import pltParams
 
@@ -9,7 +10,7 @@ params = pltParams()
 plc = plotCLASS()
 
 
-selectTimes = [ [8], #[0, 0.5, 1, 4, 8],
+selectTimes = [ [0.1, 2.1, 3, 6.5, 12],#[0, 0.5, 1, 4, 8],
                 [0, 0.25, 0.5, 0.75, 1],
                 [0, 0.25, 0.5, 0.75, 1],
                 [0, 0.25, 0.5, 0.75, 1]]
