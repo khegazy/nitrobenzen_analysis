@@ -27,10 +27,12 @@ for i,run in enumerate(runNames):
 
   fileName = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
               + run + "-referenceAzm[" + str(params.NradAzmBins) + "].dat"
+  avgReference,_ = plc.importImage(fileName)
 
-  plc.print1d([fileName],
-      "../references/signalTurnOnFull",
+  plc.print1d(avgReference,
+      "../references/totalReference-" + run,
       xRange=params.QrangeAzm,
+      isFile=False,
       options=opts)
 
 
@@ -41,12 +43,17 @@ for i,run in enumerate(runNames):
               + str(ir) + "-" + str(ir+19)\
               + "-referenceAzm[" + str(params.NradAzmBins) + "].dat"
 
+    reference,_ = plc.importImage(fileName)
+    plotRef   = reference - avgReference
+
     opts = {
         "xTitle"  : r"Q [$\AA^{-1}$]",
+        "ySlice"  : [-0.05, 0.05]
         }
-    plc.print1d([fileName],
-        "../references/signalRatioTurnOn-scanLines"
+    plc.print1d(plotRef,
+        "../references/reference-" + run + "-scanLines"
           + str(ir)+"-"+str(ir+19),
         xRange=params.QrangeAzm,
+        isFile=False,
         options=opts)
 
