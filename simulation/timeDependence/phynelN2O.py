@@ -58,7 +58,6 @@ def writeXYZfile(atoms, fileName):
       posLine += x[:9] + 4*" "
       posLine += y[:9] + 4*" "
       posLine += z[:9] + "\n"
-      print(posLine)
 
       xyz.write(posLine)
     xyz.close()
@@ -66,15 +65,16 @@ def writeXYZfile(atoms, fileName):
 
 
 
-velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-15   #Angs/fs
+velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-12   #Angs/ps
 print("velocityScale ",velocityScale)
-rotationPeriod = 400 #fs
+rotationPeriod = 0.4 #ps
 
 ###################################
 #####  Import Atom Positions  #####
 ###################################
 
 atoms = {}
+atomsOrig = {}
 atomCount = {
   'C' : 0,
   'H' : 0,
@@ -96,6 +96,7 @@ with open(XYZfile, "r") as pFile:
       pos.append(float(line[sInd:eInd]))
 
     atoms[atomType+str(atomCount[atomType])] = atomStruct(atomType, np.array(pos))
+    atomsOrig[atomType+str(atomCount[atomType])] = atomStruct(atomType, np.array(pos))
     atomCount[atomType] += 1
 
 
@@ -121,9 +122,9 @@ delayTimes = np.fromfile(
     "../../UED/mergeScans/results/timeDelays[30].dat", 
     dtype=np.double)
 
-dt        = 0.01  #ps
+dt        = 0.0025  #ps
 startTime = delayTimes[0]
-endTime   = 2.
+endTime   = 1.
 Nsteps    = int((endTime-startTime)/dt)
 print("Nsteps", Nsteps)
 sampleTimes = np.linspace(startTime, endTime, Nsteps)
@@ -155,10 +156,9 @@ for tm in sampleTimes[sInd:]:
   if tm > endTime:
     break
 
-  print("Looking at time: ",tm)
-  atoms['N0'].position += tm*velocity
-  atoms['O0'].position += tm*velocity
-  atoms['O1'].position += tm*velocity
+  atoms['N0'].position = atomsOrig['N0'].position + tm*velocity
+  atoms['O0'].position = atomsOrig['O0'].position + tm*velocity
+  atoms['O1'].position = atomsOrig['O1'].position + tm*velocity
 
   fileName = "phynel_N2O-time-"+str(tm)
   writeXYZfile(atoms, fileName)
