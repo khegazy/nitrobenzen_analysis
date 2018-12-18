@@ -34,8 +34,8 @@ def findNextItem(line, eInd):
     else:
       return sInd
 
-def writeXYZfile(atoms, time):
-  with open("./XYZfiles/phynel_N2O-time-"+str(time)+".xyz", "w") as xyz:
+def writeXYZfile(atoms, fileName):
+  with open("./XYZfiles/"+fileName+".xyz", "w") as xyz:
     xyz.write("   "+str(len(atoms)));
     xyz.write("\n\n")
     posLine = 9*3*2*4*" " + 6*" "
@@ -58,9 +58,13 @@ def writeXYZfile(atoms, time):
       posLine += x[:9] + 4*" "
       posLine += y[:9] + 4*" "
       posLine += z[:9] + "\n"
+      print(posLine)
 
       xyz.write(posLine)
     xyz.close()
+
+
+
 
 velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-15   #Angs/fs
 print("velocityScale ",velocityScale)
@@ -112,10 +116,18 @@ velocity = atoms['N0'].position - atoms[closestC].position
 velocity *= velocityScale/np.linalg.norm(velocity)
 
 ###  Get Delay Times  ###
+
 delayTimes = np.fromfile(
     "../../UED/mergeScans/results/timeDelays[30].dat", 
     dtype=np.double)
-print(delayTimes)
+
+dt        = 0.01  #ps
+startTime = delayTimes[0]
+endTime   = 2.
+Nsteps    = int((endTime-startTime)/dt)
+print("Nsteps", Nsteps)
+sampleTimes = np.linspace(startTime, endTime, Nsteps)
+#sampleTimes = delayTimes
 
 
 
@@ -123,8 +135,6 @@ print(delayTimes)
 #####  Simulation Loop  #####
 #############################
 
-dt = 0.001  #ps
-endTime = 2
 sInd = 0
 diffTD = []
 simFolder = "/reg/ued/ana/scratch/nitroBenzene/simulations/"
@@ -132,7 +142,7 @@ groundStateSMS = np.fromfile(
     simFolder+"nitrobenzene_sMsPatternLineOut"+
       "_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000"+
       "_elE-3700000.000000_Bins[555].dat", dtype=np.double)
-for tm in delayTimes:
+for tm in sampleTimes:
   if tm < 0:
     call(["cp", XYZfile, "./XYZfiles/phynel_N2O-time-"+str(tm)+".xyz"])
     diffTD.append(groundStateSMS)
@@ -141,10 +151,11 @@ for tm in delayTimes:
     break
 
 tmInd = 0
-for tm in delayTimes[sInd:]:
+for tm in sampleTimes[sInd:]:
   if tm > endTime:
     break
 
+  print("Looking at time: ",tm)
   atoms['N0'].position += tm*velocity
   atoms['O0'].position += tm*velocity
   atoms['O1'].position += tm*velocity
@@ -153,10 +164,12 @@ for tm in delayTimes[sInd:]:
   writeXYZfile(atoms, fileName)
 
   ###  Simulate Diffraction Pattern  ###
+  print("startSim")
   call(["./../diffractionPattern/simulateRefPatterns.exe",
       "-XYZdir", "./XYZfiles",
       "-InpXYZ", fileName+".xyz",
       "-Ofile", fileName])
+  print("endSim")
 
   diffLO = np.fromfile(simFolder+
       "phynel_N2O-time-"+str(tm)+
@@ -180,6 +193,10 @@ outFileName = simFolder+"phynel_N2O-azmAvgSMS"\
 
 with open(outFileName, "wb") as outFile:
   diffTD.tofile(outFile)
+timeFileName = simFolder+"phynel_N2O-timeDelays["\
+    +str(diffTD.shape[0])+"].dat"
+with open(timeFileName, "wb") as outFile:
+  sampleTimes.tofile(outFile)
 
 """
 plc.print2d(diffTD,
