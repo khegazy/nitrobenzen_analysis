@@ -137,16 +137,22 @@ sampleTimes = np.linspace(startTime, endTime, Nsteps)
 #############################
 
 sInd = 0
+diffSMSTD = []
 diffTD = []
 simFolder = "/reg/ued/ana/scratch/nitroBenzene/simulations/"
 groundStateSMS = np.fromfile(
     simFolder+"nitrobenzene_sMsPatternLineOut"+
       "_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000"+
       "_elE-3700000.000000_Bins[555].dat", dtype=np.double)
+groundState = np.fromfile(
+    simFolder+"nitrobenzene_molDiffractionPatternLineOut"+
+      "_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000"+
+      "_elE-3700000.000000_Bins[555].dat", dtype=np.double)
 for tm in sampleTimes:
   if tm < 0:
     call(["cp", XYZfile, "./XYZfiles/phynel_N2O-time-"+str(tm)+".xyz"])
-    diffTD.append(groundStateSMS)
+    diffTD.append(groundState)
+    diffSMSTD.append(groundStateSMS)
     sInd += 1
   else:
     break
@@ -164,35 +170,50 @@ for tm in sampleTimes[sInd:]:
   writeXYZfile(atoms, fileName)
 
   ###  Simulate Diffraction Pattern  ###
-  print("startSim")
   call(["./../diffractionPattern/simulateRefPatterns.exe",
       "-XYZdir", "./XYZfiles",
       "-InpXYZ", fileName+".xyz",
       "-Ofile", fileName])
-  print("endSim")
 
-  diffLO = np.fromfile(simFolder+
+  diffSMSLO = np.fromfile(simFolder+
       "phynel_N2O-time-"+str(tm)+
       "_sMsPatternLineOut_Qmax-12.376500_Ieb-5.000000"+
       "_scrnD-4.000000_elE-3700000.000000_Bins[555].dat",
       dtype=np.double)
+  diffLO = np.fromfile(simFolder+
+      "phynel_N2O-time-"+str(tm)+
+      "_molDiffractionPatternLineOut_Qmax-12.376500_Ieb-5.000000"+
+      "_scrnD-4.000000_elE-3700000.000000_Bins[555].dat",
+      dtype=np.double)
 
   diffTD.append(diffLO)
+  diffSMSTD.append(diffSMSLO)
 
 
 diffTD = np.array(diffTD)
+diffSMSTD = np.array(diffSMSTD)
 
 # Subtract T0
 for i in range(diffTD.shape[0]):
-  diffTD[i,:] = diffTD[i,:] - groundStateSMS
+  diffTD[i,:]     = diffTD[i,:] - groundState
+  diffSMSTD[i,:]  = diffSMSTD[i,:] - groundStateSMS
 
 outFileName = simFolder+"phynel_N2O-azmAvgSMS"\
     + "_Qmax-12.376500_Ieb-5.000000"\
     + "_scrnD-4.000000_elE-3700000.000000_Bins["\
     +str(diffTD.shape[0])+","+str(diffTD.shape[1])+"].dat"
+with open(outFileName, "wb") as outFile:
+  diffSMSTD.tofile(outFile)
 
+outFileName = simFolder+"phynel_N2O-azmAvg"\
+    + "_Qmax-12.376500_Ieb-5.000000"\
+    + "_scrnD-4.000000_elE-3700000.000000_Bins["\
+    +str(diffTD.shape[0])+","+str(diffTD.shape[1])+"].dat"
 with open(outFileName, "wb") as outFile:
   diffTD.tofile(outFile)
+
+
+
 timeFileName = simFolder+"phynel_N2O-timeDelays["\
     +str(diffTD.shape[0])+"].dat"
 with open(timeFileName, "wb") as outFile:
