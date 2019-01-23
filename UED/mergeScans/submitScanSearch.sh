@@ -2,7 +2,8 @@
 
 MAINDIR=/reg/neh/home/khegazy/analysis/nitroBenzene/UED
 MAINOUTPUTDIR=/reg/ued/ana/scratch/nitroBenzene/scanSearch/
-FILETORUN=alignScans.exe
+FILETORUN=mergeScans.exe
+REFERENCE=/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-20180627_1551-referenceAzm[555].dat
 
 if [ -z "$1" ]; then
   echo "ERROR SUBMITTING JOBS!!!   Must give the run name to search, or type ALL to search all runs!"
@@ -31,7 +32,6 @@ OUTPUTDIRSUFFIX="size"${NSCANS}
 OUTPUTDIR=${MAINOUTPUTDIR}"/"${OUTPUTDIRSUFFIX}
 
 echo ${OUTPUTDIR}
-echo "here"
 if [ ! -e "$OUTPUTDIR" ]; then
   mkdir ${OUTPUTDIR}
   cd ${OUTPUTDIR}
@@ -40,8 +40,10 @@ if [ ! -e "$OUTPUTDIR" ]; then
   cd -
 fi
 
-#make clean; make
-#sleep 10
+if [ ! -e "./runLists/scanSearch" ]; then
+  mkdir ./runLists/scanSearch
+fi
+
 for file in runLists/run-${RUNNAME}
 do
 
@@ -53,7 +55,7 @@ do
   OUTPUTFILENAME=${CUTBEGINNING%.*}
 
   CUTBEGINNING=${file#*Lists/}
-  NEWFILEPREFIX="./runLists/badScanSearch/"${CUTBEGINNING%.*}
+  NEWFILEPREFIX="./runLists/scanSearch/"${CUTBEGINNING%.*}
 
   CURLINE=1
   LASTLINE=$((NSCANS))
@@ -66,6 +68,7 @@ do
     sed -i "${CURLINE},${LASTLINE}!d" ${NEWRUNLIST}
 
     echo ${OUTPUTDIR}"/logs/"${OUTPUTFILENAME}"-"${JOBNAME}".log"
+    #bsub -q psanaq -o${OUTPUTDIR}"/logs/"${OUTPUTFILENAME}"-"${JOBNAME}".log" ./${FILETORUN} ${NEWRUNLIST} -ScanSearch ${JOBNAME} -OdirSuffix ${OUTPUTDIRSUFFIX} -CompareRef ${REFERENCE}
     bsub -q psanaq -o${OUTPUTDIR}"/logs/"${OUTPUTFILENAME}"-"${JOBNAME}".log" ./${FILETORUN} ${NEWRUNLIST} -ScanSearch ${JOBNAME} -OdirSuffix ${OUTPUTDIRSUFFIX}
 
     sleep 1
