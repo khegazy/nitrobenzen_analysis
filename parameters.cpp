@@ -3,7 +3,8 @@
 parameterClass::parameterClass(std::string runName) {
 
   // Molecule
-  molecule = nitrobenzene;
+  molecule = initialState;
+  //molecule = finalState2;
   radicalNames.push_back("nitrobenzene");
   radicalNames.push_back("phenoxyRadical");
   radicalNames.push_back("phenylRadical");
@@ -14,21 +15,32 @@ parameterClass::parameterClass(std::string runName) {
   Nlegendres = 1;
   NradLegBins = 50;
   NmaxRadBins = 750;
+  //NradAzmBins = 445;
   NradAzmBins = 555;
   imgSize = 895;
-  buffer = 20;
+  imgEdgeBuffer = 20;
   hasRef = false;
   refStagePos = -1;
-  smearSTD = 0.1;
   imgShutterTime = 20;
   imgNormRadMin = 1/6;
   imgNormRadMax = 0.6;
 
 
   // PV
+  getPVs        = true;
   pvSampleTimes = 5;
   pressureSmear = 180;
+  pvFolder      = "/reg/ued/ana/scratch/nitroBenzene/PV/";
 
+  // Time Zero
+  tZeroQranges.resize(3);
+  tZeroQranges[0].push_back(3);     tZeroQranges[0].push_back(3.5);
+  tZeroQranges[1].push_back(3.75);  tZeroQranges[1].push_back(5);
+  tZeroQranges[2].push_back(2);     tZeroQranges[2].push_back(3);
+
+  tZeroRatio.resize(2);
+  tZeroRatio[0] = 1;
+  tZeroRatio[1] = 0;
 
   // Merging scans
   normalizeImgs = true;
@@ -38,9 +50,31 @@ parameterClass::parameterClass(std::string runName) {
   legImageNoiseCut = 12;
   azmImageNoiseCut = 105;
 
+  timeWnHigh = 0.8;
+  timeFiltOrder  = 5;
+  timeFilterType = "lowpass";
+  smearTimeBinWindow  = 100;
+  timeSmearSTD        = 0.025;
+  scanImgAzmSTDcut    = 4;
+  scanImgAzmRefSTDcut = 4;
+
+
+  // Analysis Parameters
+  signalRranges.resize(5);
+  signalRranges[0].push_back(1.1);  signalRranges[0].push_back(1.7);
+  signalRranges[1].push_back(1.7);  signalRranges[1].push_back(2.0);
+  signalRranges[2].push_back(2.0);  signalRranges[2].push_back(2.75);
+  signalRranges[3].push_back(3.0);  signalRranges[3].push_back(4.0);
+  signalRranges[4].push_back(4.0);  signalRranges[4].push_back(5.0);
+
 
   // Background removal
   hotPixel          = 1750;
+  bkgSTDcut         = 3;
+  XrayHighCut       = 30000;
+  XrayLowCut        = 5000;
+  XraySTDcut        = 3;
+  XrayWindow        = 20;
   shellWidth        = 1;
   Npoly             = 5;
   stdIncludeLeft    = 1;
@@ -51,6 +85,7 @@ parameterClass::parameterClass(std::string runName) {
   distSTDratioRight = 0.75;
   stdChangeRatio    = 0.02;
   stdCutRight       = 2.75;
+  outlierSTDcut     = 7.;
   outlierVerbose    = false;
   indicesPath       = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
 
@@ -72,7 +107,10 @@ parameterClass::parameterClass(std::string runName) {
   outliercMaxScale        = 4;
   outliercMinScale        = 0;
  
- 
+
+  readoutStart         = 0.94; // Use ratio < 1. Converts to bins at the end
+  readoutEnd           = 1; // Use ratio < 1. Converts to bins at the end
+    
 
 
   // Filtering
@@ -82,17 +120,19 @@ parameterClass::parameterClass(std::string runName) {
   filterType = "lowpass";
 
   // Pair correlation parameters
-  NautCpadding  = 10000;
-  holeRat       = 0.15;
-  rMaxLegRat    = 0.75;
-  rMaxAzmRat    = 0.07; //0.052;
-  padDecayRat   = 0.5;
-  filterVar     = std::pow(NradAzmBins/3.25, 2);
-  lowQfillSimScale = 0.3;
+  NautCpadding      = 10000;
+  holeRat           = 0.15;
+  rMaxLegRat        = 0.75;
+  rMaxAzmRat        = 0.07; //0.052;
+  padDecayRat       = 0.5;
+  //filterVar         = std::pow(NradAzmBins/3.25, 2);
+  filterVar         = std::pow(NradAzmBins/4, 2);
+  lowQfillSimScale  = 0.3;
+  fillLowQfile      = "/reg/neh/home5/khegazy/analysis/nitrobenzene/UED/timeDepStudies/results/sim-phenoxyRadicalLowQfill[555].dat";
+  fillLowQtheory    = true;
 
 
   subtractReference = true;
-  timeSmearStd      = 0.025;
 
   // Simulation parameters
   compareSims     = false;
@@ -105,7 +145,12 @@ parameterClass::parameterClass(std::string runName) {
   screenDist      = 4;
   xyzDir          = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/XYZfiles/";
   simOutputDir    = "/reg/ued/ana/scratch/nitroBenzene/simulations/";
-  finalState      = "phenoxyRadical";
+  finalStates.push_back("phenylRadical");
+  finalStates.push_back("phenoxyRadical");
+  fsQfitBegin      = 1.75;
+  fsQfitEnd        = 5;
+  fsRfitBegin      = 1.5;
+  fsRfitEnd        = 4;
 
   NavgCenters = 15;
   centerFxnType = 2;
@@ -119,7 +164,7 @@ parameterClass::parameterClass(std::string runName) {
   backgroundFolder = "/reg/ued/ana/scratch/nitroBenzene/background/";
   indexPath = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
   pltCent = false;
-  verbose = true;
+  verbose = false;
   pltVerbose = false;
 
 
@@ -393,8 +438,11 @@ parameterClass::parameterClass(std::string runName) {
     cntrPowellTol = 0.5;
     cntrFracTol1d = 0.005;
 
-    // Pressure measurements
-    pressureFileName = "/reg/ued/ana/scratch/nitroBenzene/PV/pressureSampleChamber_07_01_2018_07_47_00-07_02_2018_08_41_10-17932.dat";
+    // PVs
+    pvMap["pressure"]    = "pressureSampleChamber_07_01_2018_07_47_00-07_02_2018_08_41_10-17932.dat";
+    pvMap["UVcounts"]    = "UVsampleChamberCam_07_01_2018_07_47_00-07_02_2018_08_41_10-17932.dat";
+    pvMap["bunkerTemp"]  = "bunkerTemperature_07_01_2018_07_47_00-07_02_2018_08_41_10-17932.dat";
+    pvMap["highBayTemp"] = "highBayTemperature_07_01_2018_07_47_00-07_02_2018_08_41_10-17932.dat"; 
  
   }
   else if ((runName.compare("20180630_1925") == 0)
@@ -531,9 +579,11 @@ parameterClass::parameterClass(std::string runName) {
     cntrPowellTol = 1;
     cntrFracTol1d = 0.01;
 
-    // Pressure measurements
-    pressureFileName = "/reg/ued/ana/scratch/nitroBenzene/PV/pressureSampleChamber_06_30_2018_19_25_55-07_01_2018_07_15_50-8521.dat";
-
+    // PV
+    pvMap["pressure"]    = "pressureSampleChamber_06_30_2018_19_25_55-07_01_2018_07_15_50-8521.dat";
+    pvMap["UVcounts"]    = "UVsampleChamberCam_06_30_2018_19_25_55-07_01_2018_07_15_50-8521.dat";
+    pvMap["bunkerTemp"]  = "bunkerTemperature_06_30_2018_19_25_55-07_01_2018_07_15_50-8521.dat";
+    pvMap["highBayTemp"] = "highBayTemperature_06_30_2018_19_25_55-07_01_2018_07_15_50-8521.dat";
   }
   else if ((runName.compare("20180629_1630") == 0)
             || (runName.compare("20180629_1619") == 0)
@@ -677,8 +727,10 @@ parameterClass::parameterClass(std::string runName) {
     cntrFracTol1d = 0.01;
 
     // Pressure measurements
-    pressureFileName = "/reg/ued/ana/scratch/nitroBenzene/PV/pressureSampleChamber_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
-
+    pvMap["pressure"]    = "pressureSampleChamber_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
+    pvMap["UVcounts"]    = "UVsampleChamberCam_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
+    pvMap["bunkerTemp"]  = "bunkerTemperature_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
+    pvMap["highBayTemp"] = "highBayTemperature_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
   }
   else if ((runName.compare("20180627_1551") == 0)
             || (runName.compare("20180627_1116") == 0)
@@ -694,19 +746,25 @@ parameterClass::parameterClass(std::string runName) {
     padMaxHeight = 6.5;
 
     // Measurement parameters
-    timeZero      = 0.375;
+    timeZero      = 0.125;
     hasRef        = true;
     refStagePos   = 154.0;
     imgMatType    = "uint16";
-    NfinalPoints  = 7;
+    NfinalPoints  = 4;
 
     // Bad scans
+    /*
     badScans.push_back(9);
     badScans.push_back(38);
     badScans.push_back(91);
     badScans.push_back(107);
     badScans.push_back(108);
     badScans.push_back(121);
+    */
+    for (int i=100; i<=121; i++) {
+      badScans.push_back(i);
+    }
+    /*
     badImages[7].push_back(1530100);
     badImages[20].push_back(1543950);
     badImages[24].push_back(1544250);
@@ -723,6 +781,25 @@ parameterClass::parameterClass(std::string runName) {
     badImages[96].push_back(1544250);
     badImages[102].push_back(1543350);
     badImages[115].push_back(1530100);
+    */
+
+    /*
+    for (int i=10; i<=18; i++) {
+      badImages[i].push_back(1530000);
+      badImages[i].push_back(1530100);
+    }
+    for (int i=49; i<=56; i++) {
+      badImages[i].push_back(1530000);
+      badImages[i].push_back(1530100);
+    }
+    for (int i=76; i<=79; i++) {
+      badImages[i].push_back(1530000);
+      badImages[i].push_back(1530100);
+    }
+    for (int i=85; i<=100; i++) {
+      badScans.push_back(i);
+    }
+    */
 
     /*
     badScans.push_back(9);
@@ -771,6 +848,8 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
+    // FIX ME commented to compare with thomas
+    /*
     for (int ir=520; ir<660; ir++) {
       for (int ic=443; ic<583; ic++) {
         row = ir - 570;
@@ -844,12 +923,14 @@ parameterClass::parameterClass(std::string runName) {
         }
       }
     }
+    */
 
  
     // Remove hole
-    holeR = 590;
-    holeC = 513;
-    holeRad = 50;
+    // FIX ME TO ORIG
+    holeR = 587; //590;
+    holeC = 512; //513;
+    holeRad = 43; //50;
 
     /////  Center Finding Parameters  /////
     // Rough center finding
@@ -874,10 +955,21 @@ parameterClass::parameterClass(std::string runName) {
     cntrPowellTol = 1;
     cntrFracTol1d = 0.01;
 
-    // Pressure measurements
-    pressureFileName = "/reg/ued/ana/scratch/nitroBenzene/PV/pressureSampleChamber_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
+    // PV files / variables
+    pvMap["pressure"]    = "pressureSampleChamber_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
+    pvMap["UVcounts"]    = "UVsampleChamberCam_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
+    pvMap["bunkerTemp"]  = "bunkerTemperature_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
+    pvMap["highBayTemp"] = "highBayTemperature_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
 
     throttle = 103; //uJ or 53 degrees
+
+    // Variables for studies
+    bkgStudyRanges.resize(4);
+    bkgStudyRanges[0].push_back(5.5);   bkgStudyRanges[0].push_back(6);
+    bkgStudyRanges[1].push_back(6);     bkgStudyRanges[1].push_back(6.8);
+    bkgStudyRanges[1].push_back(5.5);   bkgStudyRanges[1].push_back(6.8);
+    bkgStudyRanges[2].push_back(2);     bkgStudyRanges[2].push_back(3);
+    bkgStudyRanges[3].push_back(4);     bkgStudyRanges[3].push_back(5.5);
 
   }
   else if (runName.compare("simulateReference") == 0) {
@@ -885,20 +977,20 @@ parameterClass::parameterClass(std::string runName) {
     QperPix = 0.0223;
     NbinsSkip = 50; //28;
     switch (molecule) {
-      case nitrobenzene: {
+      case initialState: {
         xyzFiles.push_back("17050202_Nitrobenzene_opt_B3LYP_6-31G.xyz");
         break;
       }
 
-      case phenoxyRadical: {
+      case finalState1: {
         xyzFiles.push_back("18062101_phenyloxy_opt_B3LYP_6-31G.xyz");
         xyzFiles.push_back("18062102_NO_opt_B3LYP_6-31G.xyz");
         break;
       }
 
-      case phenylRadical: {
-        std::cout<<"Need xyz files for phynelRadical\n";
-        exit(0);
+      case finalState2: {
+        xyzFiles.push_back("phenyl.xyz");
+        xyzFiles.push_back("nitrogenDioxide.xyz");
         break;
       }
 
@@ -916,6 +1008,12 @@ parameterClass::parameterClass(std::string runName) {
     std::cerr << "ERROR: Cannot set values for run " + runName + "!!!\n";
     exit(0);
   }
+
+  readoutAzmBinStart = 400; //readoutStart*NradAzmBins;
+  readoutAzmBinEnd   = 450; //readoutEnd*NradAzmBins;
+  readoutLegBinStart = readoutStart*NradLegBins;
+  readoutLegBinEnd   = readoutEnd*NradLegBins;
+
 
   refStagePos *= scaleStagePos;
   maxQleg   = QperPix*NradLegBins;
