@@ -68,8 +68,13 @@ def writeXYZfile(atoms, folder, fileName):
 class dissociation:
 
   def __init__(self, atoms):
+    self.startTime = 0. #ps
     self.endTime = 1. #ps
-    self.velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-12   #Angs/ps
+    self.m_N2O = (2*8 + 7)*1.7e-27      #kg
+    self.m_phenyl = (5 + 6*6)*1.7e-27   #kg
+    self.momentum = np.sqrt(4.8e-19*2*self.m_N2O*self.m_phenyl/(self.m_N2O + self.m_phenyl))
+    self.velocityScale = (self.momentum/self.m_N2O)*1e10*1e-12    #Angs/ps
+    #self.velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-12   #Angs/ps
     print("dissocition (angs/ps): ", self.velocityScale)
 
     ###  Find carbon closest to N  ###
@@ -101,8 +106,9 @@ class dissociation:
 class rotation:
 
   def __init__(self, atoms):
-    self.TaccStart      = 0.1 #ps
+    self.startTime      = 0. #ps
     self.endTime        = 2. #ps
+    self.TaccStart      = 0.1 #ps
     self.rotationPeriod = 0.4 #ps
     self.rotationFreq   = 2.*np.pi/self.rotationPeriod
     self.deltaTaccStop  = 0.05
@@ -253,19 +259,18 @@ if __name__ == "__main__":
       dtype=np.double)
 
   dt        = 0.0025  #ps
-  startTime = delayTimes[0]
 
   #########################
   #####  Simulations  #####
   #########################
 
   simulations = {
-      #"dissociation_phenyl-N2O" : dissociation(atomsOrig),
+      "dissociation_phenyl-N2O" : dissociation(atomsOrig),
       "rotation_nitrobenzene"   : rotation(atomsOrig)
       #"bending_nitrobenzene"    : bending(atomsOrig)
       }
 
-  simFolder = "../../../data/simulations/"
+  simFolder = "/reg/ued/ana/scratch/nitroBenzene/simulations/"
   groundStateSMS = np.fromfile(
       simFolder+"nitrobenzene_sMsPatternLineOut"+
         "_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000"+
@@ -286,8 +291,8 @@ if __name__ == "__main__":
     if (useDelayTimes):
       sampleTimes = delayTimes
     else:
-      Nsteps    = int((simulation.endTime-startTime)/dt)
-      sampleTimes = np.linspace(startTime, simulation.endTime, Nsteps)
+      Nsteps    = int((simulation.endTime-simulation.startTime)/dt)
+      sampleTimes = np.linspace(simulation.startTime, simulation.endTime, Nsteps)
 
     sInd = 0
     diffSMSTD = []
@@ -335,11 +340,6 @@ if __name__ == "__main__":
       diffSMSTD.append(diffSMSLO)
 
 
-    plc.print1d(np.array(simulation.thetas), "./test_thetas", isFile=False)
-    plc.print1d(np.array(np.sin(simulation.thetas)), "./test_sinThetas", isFile=False)
-    plc.print1d(np.array(np.cos(simulation.thetas)), "./test_cosThetas", isFile=False)
-    plc.print1d(np.array(simulation.distO1), "./test_distO1", isFile=False)
-    plc.print1d(np.array(simulation.distO2), "./test_distO2", isFile=False)
     diffTD = np.array(diffTD)
     diffSMSTD = np.array(diffSMSTD)
 
