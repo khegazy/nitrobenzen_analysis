@@ -22,8 +22,8 @@ parameterClass::parameterClass(std::string runName) {
   hasRef = false;
   refStagePos = -1;
   imgShutterTime = 20;
-  imgNormRadMin = 1/6;
-  imgNormRadMax = 0.6;
+  imgNormRadMin = 0.045;
+  imgNormRadMax = 0.721;
 
 
   // PV
@@ -45,7 +45,7 @@ parameterClass::parameterClass(std::string runName) {
   // Merging scans
   normalizeImgs = true;
   Qnormalize = true;
-  mergeSTDscale = 2.6;
+  mergeSTDscale = 3; //2.6; FIX ME CHANGE compare to Thomas
   mergeImageSTDScale = 2.3;
   legImageNoiseCut = 12;
   azmImageNoiseCut = 105;
@@ -70,21 +70,21 @@ parameterClass::parameterClass(std::string runName) {
 
   // Background removal
   hotPixel          = 1750;
-  bkgSTDcut         = 3;
+  bkgSTDcut         = 15;
   XrayHighCut       = 30000;
   XrayLowCut        = 5000;
   XraySTDcut        = 3;
   XrayWindow        = 20;
   shellWidth        = 1;
   Npoly             = 5;
-  stdIncludeLeft    = 1;
+  stdIncludeLeft    = 4; //1;
   distSTDratioLeft  = 0.5;
   stdCutLeft        = 2.5;
   meanBinSize       = 12;
   stdIncludeRight   = 1;
   distSTDratioRight = 0.75;
   stdChangeRatio    = 0.02;
-  stdCutRight       = 2.75;
+  stdCutRight       = 5; //2.75;
   outlierSTDcut     = 7.;
   outlierVerbose    = false;
   indicesPath       = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
@@ -411,9 +411,9 @@ parameterClass::parameterClass(std::string runName) {
     */
    
     // Remove hole
-    holeR = 590;
-    holeC = 513;
-    holeRad = 50;
+    holeR = 587; //590;
+    holeC = 512; //513;
+    holeRad = 43; //50;
 
     /////  Center Finding Parameters  /////
     // Rough center finding
@@ -848,7 +848,6 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    // FIX ME commented to compare with thomas
     /*
     for (int ir=520; ir<660; ir++) {
       for (int ic=443; ic<583; ic++) {
@@ -923,14 +922,13 @@ parameterClass::parameterClass(std::string runName) {
         }
       }
     }
-    */
+*/
 
  
     // Remove hole
-    // FIX ME TO ORIG
     holeR = 587; //590;
     holeC = 512; //513;
-    holeRad = 43; //50;
+    holeRad = 43; //45;
 
     /////  Center Finding Parameters  /////
     // Rough center finding
