@@ -10,7 +10,7 @@ params = pltParams()
 plc = plotCLASS()
 
 
-selectTimes = [ [0.1, 2.1, 3, 6.5, 12],#[0, 0.5, 1, 4, 8],
+selectTimes = [ [-0.01, 0.25, 0.5, 3.75, 6.5],#[0, 0.5, 1, 4, 8],
                 [0, 0.25, 0.5, 0.75, 1],
                 [0, 0.25, 0.5, 0.75, 1],
                 [0, 0.25, 0.5, 0.75, 1]]
@@ -55,7 +55,8 @@ for i,run in enumerate(runs):
       xRange=params.QrangeAzm, options=optsDiff)
   
   fileName = "../../results/data-"\
-      + run + "-pairCorrOdd["\
+      + run + "_pairCorrOdd["\
       + str(timeSteps[i]) + "," + str(params.NpairCorrBins) + "].dat"
   plc.printLineOut(fileName, 0, timeInds, "../data-" + run + "-pairCorrLO", 
       xRange=params.Rrange, options=optsCorr)
+
