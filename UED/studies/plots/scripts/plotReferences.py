@@ -13,6 +13,7 @@ from plotParams import pltParams
 
 params = pltParams()
 plc = plotCLASS()
+size = 5
 
 runNames = ["20180627_1551"] #, "20180629_1630", "20180630_1925", "20180701_0746"]
 for i,run in enumerate(runNames):
@@ -38,9 +39,10 @@ for i,run in enumerate(runNames):
 
   for ir in range(1, 101):
 
-    fileName = "/reg/ued/ana/scratch/nitroBenzene/scanSearch/size20/data-"\
+    fileName = "/reg/ued/ana/scratch/nitroBenzene/scanSearch/size"\
+              + str(size) + "/data-"\
               + run + "-scanLines"\
-              + str(ir) + "-" + str(ir+19)\
+              + str(ir) + "-" + str(ir+size-1)\
               + "-referenceAzm[" + str(params.NradAzmBins) + "].dat"
 
     reference,_ = plc.importImage(fileName)
@@ -51,8 +53,10 @@ for i,run in enumerate(runNames):
         "ySlice"  : [-0.05, 0.05]
         }
     plc.print1d(plotRef,
-        "../references/reference-" + run + "-scanLines"
-          + str(ir)+"-"+str(ir+19),
+        "../references/reference-" + run 
+          + "-size-" + str(size)
+          + "-scanLines-"
+          + str(ir)+"-"+str(ir+size-1),
         xRange=params.QrangeAzm,
         isFile=False,
         options=opts)
