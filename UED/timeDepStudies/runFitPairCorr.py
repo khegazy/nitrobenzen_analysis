@@ -24,30 +24,34 @@ molNames = ["data", "dataStatic", "nitrobenzene", "phenoxyNO", "phenoxyNOdiff"]
 if __name__ == "__main__":
 
   #####  Variables  ##### 
-  molecule = molOpts.nitrobenzene
+  #molecule = molOpts.nitrobenzene
   #molecule = molOpts.phenoxyNOdiff
-  #molecule = molOpts.data
+  molecule = molOpts.data
   doFit   = True
   sineFit = True
   debug   = False
 
   parameters = {
-      "maxTrain"      : 30000,
+      "maxTrain"      : 20000,
       "saveEvery"     : 20,
       "atoms"         : ["hydrogen", "carbon", "nitrogen", "oxygen"],
       "Natoms"        : [5, 6, 1, 2],
-      "Rrange"        : [1,9],
+      "Rrange"        : [0,9],
       "Nbins"         : 555,
       "startBin"      : 50,
-      "NfitFxns"      : 750,
+      "NfitFxns"      : 500,
       "doNormalEqn"   : False,
       "qPerPix"       : 0.0223,
       "elEnergy"      : 3.7e6,
       "sineTransFile" : None,
-      "checkpointPath": "./results/",
-      "smoothLoss"    : False,
+      "checkpointPath": "./results/fitting/",
+      "smoothLoss"    : None,
       "nonNegLoss"    : False,
-      "noiseLoss"     : False}
+      "noiseLoss"     : None, #1,
+      "timeDepLoss"   : False,
+      "L1regularize"  : None,
+      "L1NRregularize": None,
+      "L2regularize"  : None}
 
   if parameters["smoothLoss"]:
     filterSize = {
@@ -105,25 +109,36 @@ if __name__ == "__main__":
                       +"data-20180627_1551-sMsStandardDev[29,555].dat",
                     dtype=np.double),
                     (29,555))**2
+    ###  Gaussian Damping  ###
+    gDamp     = np.exp(-1*np.arange(555.)**2/(2*(555./4)**2))
+    fxnToFit *= np.reshape(gDamp, (1,-1))
+
     plc.print1d(variance[:7,:], "testVariance", isFile=False)
     parameters["sineTransFile"] = None
-    parameters["smoothLoss"]    = True
+    #parameters["smoothLoss"]      = 20
     #parameters["noiseLoss"]     = True
+    #parameters["timeDepLoss"]   = True
+    parameters["L1regularize"]    = 1e2
+    #parameters["L1NRregularize"]  = 1e-1
+    #parameters["L2regularize"]    = 5e-7
   elif molecule is molOpts.dataStatic:
     fxnToFit  = np.fromfile(
-                  "../staticDiffraction/results/"
+                  "../staticDiffraction/results/fitting/"
                     +"staticDiffraction_20180627_1551[555].dat",
-                  #"../mergeScans/results/"
+                  #"../mergeScans/results/fitting/"
                   #+"referenceAzm-20180627_1551[555].dat",
                   dtype=np.double)
     variance  = np.fromfile(
-                  "../mergeScans/results/"
+                  "../mergeScans/results/fitting/"
                   +"referenceAzmsMsStandardDev-20180627_1551[555].dat",
                   dtype=np.double)**2
     parameters["sineTransFile"] =\
-                  "./results/fitPairCorrNitrobenzene_maxR-9.862436[369].dat"
-    parameters["smoothLoss"]    = True
-    parameters["nonNegLoss"]    = True
+                  "./results/fitting/fitPairCorrNitrobenzene_maxR-9.862436[369].dat"
+    parameters["smoothLoss"]      = 20
+    parameters["nonNegLoss"]      = True
+    parameters["L1regularize"]    = 1e-4
+    parameters["L1NRregularize"]  = 1e-1
+    parameters["L2regularize"]    = 5e-6
     #parameters["noiseLoss"]     = True
   elif molecule is molOpts.nitrobenzene:
     fxnToFit    = np.fromfile(
@@ -132,10 +147,13 @@ if __name__ == "__main__":
     variance    = np.ones(fxnToFit.shape[0])
     bondPrefix  = nitrobenzene_bondFile
     parameters["sineTransFile"] =\
-                  "./results/fitPairCorrNitrobenzene_maxR-9.862436[369].dat"
-    parameters["smoothLoss"]    = True
+                  "./results/fitting/fitPairCorrNitrobenzene_maxR-9.862436[369].dat"
+    parameters["smoothLoss"]      = 20
     parameters["nonNegLoss"]    = True
     #parameters["noiseLoss"]     = True
+    parameters["L1regularize"]    = 1e-4
+    parameters["L1NRregularize"]  = 1e-1
+    parameters["L2regularize"]    = 5e-6
   elif molecule is molOpts.phenoxyNO:
     fxnToFit    = np.fromfile(
                     simDir+phenoxyNO_simPath, 
@@ -143,10 +161,13 @@ if __name__ == "__main__":
     variance    = np.ones(fxnToFit.shape[0])
     bondPrefix  = nitrobenzene_bondFile
     parameters["sineTransFile"] =\
-                  "./results/fitPairCorr"
-    parameters["smoothLoss"]    = True
+                  "./results/fitting/fitPairCorr"
+    parameters["smoothLoss"]      = 20
     parameters["nonNegLoss"]    = True
     #parameters["noiseLoss"]     = True
+    parameters["L1regularize"]    = 1e-4
+    parameters["L1NRregularize"]  = 1e-1
+    parameters["L2regularize"]    = 5e-6
   elif molecule is molOpts.phenoxyNOdiff:
     fxnToFit  = np.fromfile(
                   simDir+phenoxyNO_simPath, 
@@ -156,9 +177,12 @@ if __name__ == "__main__":
                   dtype=np.double)
     variance  = np.ones(fxnToFit.shape[0])
     parameters["sineTransFile"] =\
-                  "./results/fitPairCorrPhenoxyDiff_maxR-9.862436[369].dat"
-    parameters["smoothLoss"]    = True
+                  "./results/fitting/fitPairCorrPhenoxyDiff_maxR-9.862436[369].dat"
+    parameters["smoothLoss"]      = 20
     #parameters["noiseLoss"]     = True
+    parameters["L1regularize"]    = 1e-6
+    parameters["L1NRregularize"]  = 1e-1
+    parameters["L2regularize"]    = 5e-7
   else:
     raise RuntimeError("Do not recognize molecule %s" % (repr(molecule))) 
 
@@ -295,6 +319,7 @@ if __name__ == "__main__":
     #fitCoeffs = fitCoeffs.sum(axis=0)
     opts = {
         "xTitle" : r"R [$\AA$]"}
+    gaussCoeffs = np.zeros_like(fitCoeffs[:,0,:])
     for i in range(fitCls.Nfits):
       plotName  = "./plots/"+molNames[molecule]+"-fitCoeff"
       if fitCls.Nfits > 1:
@@ -303,12 +328,12 @@ if __name__ == "__main__":
       currentCoeffs = fitCoeffs[i,:,:]
       if sineTrans is not None:
         opts["labels"] = ["sine Transform", "Fit"]
-        currentCoeffs  = np.vstack((np.array(sineTrans), currentCoeffs))
+        currentCoeffs  = np.vstack((np.array(sineTrans)*0.5, currentCoeffs))
       else:
         opts["labels"] = ["Fit"]
       if molecule is not molOpts.data:
         opts["labels"] += bondTypes
-        currentCoeffs  = np.vstack((currentCoeffs, bondCoeffs/20.))
+        currentCoeffs  = np.vstack((currentCoeffs, bondCoeffs/175.))
 
       plc.print1d(
           currentCoeffs,
@@ -320,10 +345,11 @@ if __name__ == "__main__":
       plotName  = "./plots/"+molNames[molecule]+"-fitCoeffFilt"
       if fitCls.Nfits > 1:
         plotName += "-time-" + str(i)
-      currentCoeffs = gaussian_filter1d(
-                        fitCoeffs[i,:,:], 
-                        filterSize[parameters["NfitFxns"]], 
-                        axis=1)*6
+      gaussCoeffs[i,:]  = gaussian_filter1d(
+                            fitCoeffs[i,:,:], 
+                            filterSize[parameters["NfitFxns"]], 
+                            axis=1)
+      currentCoeffs     = gaussCoeffs[i,:]*6
       if sineTrans is not None:
         opts["labels"] = ["sine Transform", "Fit"]
         currentCoeffs  = np.vstack((np.array(sineTrans), currentCoeffs))
@@ -338,6 +364,53 @@ if __name__ == "__main__":
           plotName, 
           xRange=parameters["Rrange"],
           isFile=False)
+
+    if fitCls.Nfits > 1:
+      opts = {
+          "xTitle"  : "Time [ps]",
+          "yTitle"  : r"Q [$\AA^{-1}$]"}
+      timeDelay = np.fromfile("../mergeScans/results/timeDelays["
+            + str(fitCls.Nfits + 1) + "].dat", np.double)
+
+      plotName = "./plots/"+molNames[molecule]+"-fitTdCoeff"
+      plc.print2d(
+          fitCoeffs[:,0,:],
+          plotName,
+          X=timeDelay,
+          yRange=parameters["Rrange"],
+          isFile=False,
+          options=opts)
+
+      opts["xSlice"] = [-0.3, 2]
+      plc.print2d(
+          fitCoeffs[:,0,:],
+          plotName+"Tslice",
+          X=timeDelay,
+          yRange=parameters["Rrange"],
+          isFile=False,
+          options=opts)
+      del opts["xSlice"]
+
+      plotName = "./plots/"+molNames[molecule]+"-fitTdCoeffFilt"
+      plc.print2d(
+          gaussCoeffs,
+          plotName,
+          X=timeDelay,
+          yRange=parameters["Rrange"],
+          isFile=False,
+          options=opts)
+
+      opts["xSlice"] = [-0.3, 2]
+      plc.print2d(
+          gaussCoeffs,
+          plotName+"Tslice",
+          X=timeDelay,
+          yRange=parameters["Rrange"],
+          isFile=False,
+          options=opts)
+      del opts["xSlice"]
+
+
 
 
     ########################
