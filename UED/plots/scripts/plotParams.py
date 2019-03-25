@@ -3,6 +3,10 @@ import numpy as np
 class pltParams:
   def __init__(self): 
 
+    self.runs = ["20180627_1551", "20180629_1630", "20180630_1925", "20180701_0746"]
+    self.timeSteps      = [29, 18, 19, 19]
+    self.smearTimeSteps = [1152, 402, 402, 402]
+
     self.Nlegendres     = 5
     self.QperPix        = 0.0223
 
