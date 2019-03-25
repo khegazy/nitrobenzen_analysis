@@ -40,16 +40,16 @@ opts = {
   "labels"     : ["Phenoxy + NO", "Phenyl + NO2"]
   }
 
-plc.print1d([phenoxySMS, phenylSMS],
-    "../sim-compareTheories_sMsFinalState",
-    xRange=params.QrangeAzm,
-    options=opts)
-
 plc.print1d([phenoxyRAW, phenylRAW],
     "../sim-compareTheories_finalState",
     xRange=params.QrangeAzm,
     options=opts)
 
+opts["ySlice"] = [-1.2, 0.6]
+plc.print1d([phenoxySMS, phenylSMS],
+    "../sim-compareTheories_sMsFinalState",
+    xRange=params.QrangeAzm,
+    options=opts)
 
 
 atoms = ["hydrogen", "carbon", "nitrogen", "oxygen"]
@@ -113,6 +113,21 @@ for i,run in enumerate(runs):
     "xTitle"  : r"R [$\AA$]"
   }
   opts["ySlice"] = [-0.3, 0.4]
+
+  """
+  pcTheoryImages = []
+  image,_ = plc.importImage(
+      "../../results/sim-phenoxyRadical_pairCorrFinalState_scaled["
+        + str(params.NpairCorrBins) + "].dat")
+  pcTheoryImages.append(image)
+  image,_ = plc.importImage(
+      "../../results/sim-phenylRadical_pairCorrFinalState_scaled["
+        + str(params.NpairCorrBins) + "].dat")
+  pcTheoryImages.append(image)
+  """
+
+  """
+  pcTheoryImages are not scaled to data by fit
   image,_ = plc.importImage("../../results/data-"\
               + run + "_finalState_pairCorrOdd["\
               + str(params.NpairCorrBins) + "].dat")
@@ -123,38 +138,36 @@ for i,run in enumerate(runs):
       xRange=params.Rrange,
       isFile=False,
       options=opts)
+  """
 
 
   #####  Diffraction  #####
   opts = {
     "labels"  : ["Data", "Phenoxy + NO", "Phenyl + NO2"],
-    "xTitle"  : r"Q [$\AA^{-1}$]" 
+    "xTitle"  : r"Q [$\AA^{-1}$]",
+    "xRebin"   : 5
   }
 
-  opts["ySlice"] = [-0.7, 0.3]
-  plc.print1d( 
-        ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
-          + run + "-sMsFinalState[" + str(params.NradAzmBins) + "].dat",
+  opts["ySlice"] = [-0.13, 0.13]
+  #opts["ySlice"] = [-0.7, 0.6]
+  files = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
+          + run + "_sMsFinalStateFittedTo[" + str(params.NradAzmBins) + "].dat",
         "../../results/sim-phenoxyRadical_sMsFinalState_scaled["
           + str(params.NradAzmBins) + "].dat",
         "../../results/sim-phenylRadical_sMsFinalState_scaled["
-          + str(params.NradAzmBins) + "].dat"] ,
+          + str(params.NradAzmBins) + "].dat"] 
+  errFiles = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
+          + run + "_sMsFinalStateSEMFittedTo[" + str(params.NradAzmBins) + "].dat",
+          None,
+          None]
+
+  plc.print1d(files, 
       "../compareFinalStates_sMsAzmAvgDiff",
+      errors=errFiles,
       xRange=params.QrangeAzm,
       options=opts)
-  
-  opts["ySlice"] = [-0.01, 0.005]
-  plc.print1d( 
-        ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
-          + run + "-diffFinalState[" + str(params.NradAzmBins) + "].dat",
-        "../../results/sim-phenoxyRadical_diffFinalState_scaled["
-          + str(params.NradAzmBins) + "].dat",
-        "../../results/sim-phenylRadical_diffFinalState_scaled["
-          + str(params.NradAzmBins) + "].dat"] ,
-      "../compareFinalStates_azmAvgDiff",
-      xRange=params.QrangeAzm,
-      options=opts)
-  
+ 
+
 #######################################
 #####  Testing low Q theory fill  #####
 #######################################
