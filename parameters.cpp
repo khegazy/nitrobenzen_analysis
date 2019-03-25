@@ -22,8 +22,8 @@ parameterClass::parameterClass(std::string runName) {
   hasRef = false;
   refStagePos = -1;
   imgShutterTime = 20;
-  imgNormRadMin = 0.045;
-  imgNormRadMax = 0.721;
+  imgNormRadMin = 0.045; //0.06; //0.045;
+  imgNormRadMax = 0.721; //0.33; //0.721;
 
 
   // PV
@@ -43,7 +43,7 @@ parameterClass::parameterClass(std::string runName) {
   tZeroRatio[1] = 0;
 
   // Merging scans
-  normalizeImgs = true;
+  normalizeImgs = false;
   Qnormalize = true;
   mergeSTDscale = 3; //2.6; FIX ME CHANGE compare to Thomas
   mergeImageSTDScale = 2.3;
@@ -69,24 +69,27 @@ parameterClass::parameterClass(std::string runName) {
 
 
   // Background removal
-  hotPixel          = 1750;
-  bkgSTDcut         = 15;
-  XrayHighCut       = 30000;
-  XrayLowCut        = 5000;
+  XrayHighCut       = 1e4; //30000;
+  XrayLowCut        = 4e3;
   XraySTDcut        = 3;
   XrayWindow        = 20;
+  xRayHitDist       = false;
+
+  hotPixel          = 1750;
+  bkgSTDcut         = 15;
   shellWidth        = 1;
   Npoly             = 5;
-  stdIncludeLeft    = 4; //1;
+  stdIncludeLeft    = 3; //1;
   distSTDratioLeft  = 0.5;
-  stdCutLeft        = 2.5;
+  stdCutLeft        = 3.5;
   meanBinSize       = 12;
   stdIncludeRight   = 1;
   distSTDratioRight = 0.75;
   stdChangeRatio    = 0.02;
-  stdCutRight       = 5; //2.75;
+  stdCutRight       = 7; //2.25; //2.75;
   outlierSTDcut     = 7.;
   outlierVerbose    = false;
+  radPixDist        = false;
   indicesPath       = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
 
   outlierMapSTDcut        = 1.5;//75;
@@ -108,16 +111,19 @@ parameterClass::parameterClass(std::string runName) {
   outliercMinScale        = 0;
  
 
-  readoutStart         = 0.94; // Use ratio < 1. Converts to bins at the end
+  readoutStart         = 0.7; //0.94; // Use ratio < 1. Converts to bins at the end
   readoutEnd           = 1; // Use ratio < 1. Converts to bins at the end
     
-
-
   // Filtering
   order  = 5;
   WnLow  = 0.005;
   WnHigh = 0.08;
   filterType = "lowpass";
+  pltFilterVerbose = false;
+
+  // Remove low order polynomial noise
+  NlowOrderPoly         = 6;
+  lowPolySubtractStudy  = true;
 
   // Pair correlation parameters
   NautCpadding      = 10000;
@@ -145,12 +151,15 @@ parameterClass::parameterClass(std::string runName) {
   screenDist      = 4;
   xyzDir          = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/XYZfiles/";
   simOutputDir    = "/reg/ued/ana/scratch/nitroBenzene/simulations/";
+  fsFitOffset     = false;
+  fsFilterSMS     = false; 
+  fsFilterVar     = std::pow(NradAzmBins/4.5, 2); 
+  fsQfitBegin     = 1;
+  fsQfitEnd       = 4;
+  fsRfitBegin     = 1.1;
+  fsRfitEnd       = 8;
   finalStates.push_back("phenylRadical");
   finalStates.push_back("phenoxyRadical");
-  fsQfitBegin      = 1.75;
-  fsQfitEnd        = 5;
-  fsRfitBegin      = 1.5;
-  fsRfitEnd        = 4;
 
   NavgCenters = 15;
   centerFxnType = 2;
@@ -164,7 +173,7 @@ parameterClass::parameterClass(std::string runName) {
   backgroundFolder = "/reg/ued/ana/scratch/nitroBenzene/background/";
   indexPath = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
   pltCent = false;
-  verbose = false;
+  verbose = false; 
   pltVerbose = false;
 
 
@@ -848,81 +857,81 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    /*
-    for (int ir=520; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 570;
-        col = ic - 535;
-        if (rad > std::sqrt(row*row + col*col)) {
-          nanMap[ir][ic] = NANVAL;
-        }
-        row = ir - 590;
-        col = ic - 518;
-        if (sqrt(row*row + col*col) < hRad) {
-          nanMap[ir][ic] = NANVAL;
+    if (false) {
+      for (int ir=520; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 570;
+          col = ic - 535;
+          if (rad > std::sqrt(row*row + col*col)) {
+            nanMap[ir][ic] = NANVAL;
+          }
+          row = ir - 590;
+          col = ic - 518;
+          if (sqrt(row*row + col*col) < hRad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    rad = 50;
-    for (int ir=420; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 565;
-        col = ic - 510;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      rad = 50;
+      for (int ir=420; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 565;
+          col = ic - 510;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    rad = 46;
-    for (int ir=530; ir<700; ir++) {
-      for (int ic=560; ic<630; ic++) {
-        row = ir - 575;
-        col = ic - 575;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      rad = 46;
+      for (int ir=530; ir<700; ir++) {
+        for (int ic=560; ic<630; ic++) {
+          row = ir - 575;
+          col = ic - 575;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    for (int ir=600; ir<630; ir++) {
-      for (int ic=550; ic<630; ic++) {
-        nanMap[ir][ic] = NANVAL;
+      for (int ir=600; ir<630; ir++) {
+        for (int ic=550; ic<630; ic++) {
+          nanMap[ir][ic] = NANVAL;
+        }
       }
-    }
 
-    rad = 15;
-    for (int ir=572; ir<612; ir++) {
-      for (int ic=640; ic<670; ic++) {
-        row = ir - 587;
-        col = ic - 652;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      rad = 15;
+      for (int ir=572; ir<612; ir++) {
+        for (int ic=640; ic<670; ic++) {
+          row = ir - 587;
+          col = ic - 652;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+      rad = 20;
+      for (int ir=560; ir<610; ir++) {
+        for (int ic=342; ic<392; ic++) {
+          row = ir - 582;
+          col = ic - 367;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+      rad = 15;
+      for (int ir=700; ir<747; ir++) {
+        for (int ic=57; ic<98; ic++) {
+          row = ir - 722;
+          col = ic - 78;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
     }
-    rad = 20;
-    for (int ir=560; ir<610; ir++) {
-      for (int ic=342; ic<392; ic++) {
-        row = ir - 582;
-        col = ic - 367;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
-    rad = 15;
-    for (int ir=700; ir<747; ir++) {
-      for (int ic=57; ic<98; ic++) {
-        row = ir - 722;
-        col = ic - 78;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
-*/
 
  
     // Remove hole
@@ -1007,8 +1016,8 @@ parameterClass::parameterClass(std::string runName) {
     exit(0);
   }
 
-  readoutAzmBinStart = 400; //readoutStart*NradAzmBins;
-  readoutAzmBinEnd   = 450; //readoutEnd*NradAzmBins;
+  readoutAzmBinStart = readoutStart*NradAzmBins; //400
+  readoutAzmBinEnd   = readoutEnd*NradAzmBins; //450
   readoutLegBinStart = readoutStart*NradLegBins;
   readoutLegBinEnd   = readoutEnd*NradLegBins;
 
