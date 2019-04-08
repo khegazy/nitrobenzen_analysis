@@ -60,6 +60,15 @@ for i,run in enumerate(runs):
         X=timeDelay,
         yRange=params.QrangeAzm,
         options=opts)
+
+  tdData, _  = plc.importImage(mergeFolder + "data-"
+          + run + "-azmAvgDiff["
+          + str(params.timeSteps[i]) 
+          + "," + str(params.NradAzmBins) + "].dat")
+  np.savetxt("X.txt", timeDelay, delimiter=" ")
+  Qaxis = np.linspace(0, 1., tdData.shape[1])*params.QrangeAzm[1]
+  np.savetxt("Qaxis.txt", Qaxis, delimiter=" ")
+  np.savetxt("diffData.txt", tdData, delimiter=" ")
    
   plc.print2d("../../results/data-" 
           + run + "_sMsSubtractFinalState["
@@ -144,6 +153,13 @@ for i,run in enumerate(runs):
         yRange=params.Rrange,
         options=opts)
 
+  tdData, _  = plc.importImage("../../results/data-" + run + "_pairCorrOdd["
+          + str(params.timeSteps[i]) + "," 
+          + str(params.NpairCorrBins) + "].dat")
+  Raxis = np.linspace(0, 1., tdData.shape[1])*params.Rrange[1]
+  np.savetxt("Raxis.txt", Raxis, delimiter=" ")
+  np.savetxt("pCorrData.txt", tdData, delimiter=" ")
+ 
   plc.print2d("../../results/data-" + run + "_pairCorrSubtractFinalState["
           + str(params.timeSteps[i]) + "," 
           + str(params.NpairCorrBins) + "].dat",
