@@ -113,7 +113,19 @@ parameterClass::parameterClass(std::string runName) {
 
   readoutStart         = 0.7; //0.94; // Use ratio < 1. Converts to bins at the end
   readoutEnd           = 1; // Use ratio < 1. Converts to bins at the end
-    
+   
+  // Centering
+  centerFxnType     = 3;
+  centerShellWidth  = 15; 
+  centerSTDcut      = 3;
+
+  meanInds.push_back(140); 
+  meanInds.push_back(155); 
+  meanInds.push_back(170); 
+  meanInds.push_back(185); 
+  meanInds.push_back(200); 
+  meanInds.push_back(250); 
+
   // Filtering
   order  = 5;
   WnLow  = 0.005;
@@ -123,7 +135,7 @@ parameterClass::parameterClass(std::string runName) {
 
   // Remove low order polynomial noise
   NlowOrderPoly         = 6;
-  lowPolySubtractStudy  = true;
+  lowPolySubtractStudy  = false;
 
   // Pair correlation parameters
   NautCpadding      = 10000;
@@ -161,10 +173,6 @@ parameterClass::parameterClass(std::string runName) {
   finalStates.push_back("phenylRadical");
   finalStates.push_back("phenoxyRadical");
 
-  NavgCenters = 15;
-  centerFxnType = 2;
-  centerMinRadBin = 250;
-  centerShellWidth = 100;
   preProcOutputDir = "/reg/ued/ana/scratch/nitroBenzene/rootFiles/";
   mergeScansOutputDir = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/";
   scanSearchOutputDir = "/reg/ued/ana/scratch/nitroBenzene/scanSearch/";
@@ -203,10 +211,8 @@ parameterClass::parameterClass(std::string runName) {
     meanInd = 335;
     COMstdScale = 0.025;
 
-    // Fine center finding
-    NavgCenters = 15;
+    // Fine centering
     centerFxnType = 2;
-    centerMinRadBin = 60;
     centerShellWidth = 130; //70;
     holeR = 547;
     holeC = 492;
@@ -434,14 +440,6 @@ parameterClass::parameterClass(std::string runName) {
     meanInd = 350;
     COMstdScale = 0.075;
 
-    // Fine center finding
-    /*
-    NavgCenters = 15;
-    centerFxnType = 2;
-    centerMinRadBin = 250;
-    centerShellWidth = 100;
-    */
-
     cntrScale = 10;
     cntrMinScale = 0.5;
     cntrPowellTol = 0.5;
@@ -574,14 +572,6 @@ parameterClass::parameterClass(std::string runName) {
     maxRad = 325;
     meanInd = 350;
     COMstdScale = 0.075;
-
-    // Fine center finding
-    /*
-    NavgCenters = 15;
-    centerFxnType = 1;
-    centerMinRadBin = 125;
-    centerShellWidth = 170;
-    */
 
     cntrScale = 10;
     cntrMinScale = 1;
@@ -721,14 +711,6 @@ parameterClass::parameterClass(std::string runName) {
     maxRad = 350;
     meanInd = 350;
     COMstdScale = 0.075;
-
-    // Fine center finding
-    /*
-    NavgCenters = 15;
-    centerFxnType = 1;
-    centerMinRadBin = 125;
-    centerShellWidth = 170;
-    */
 
     cntrScale = 10;
     cntrMinScale = 1;
@@ -935,9 +917,9 @@ parameterClass::parameterClass(std::string runName) {
 
  
     // Remove hole
-    holeR = 587; //590;
-    holeC = 512; //513;
-    holeRad = 43; //45;
+    holeR = 590; //587; //590;
+    holeC = 513; //512; //513;
+    holeRad = 45; //43; //45;
 
     /////  Center Finding Parameters  /////
     // Rough center finding
@@ -948,14 +930,6 @@ parameterClass::parameterClass(std::string runName) {
     maxRad = 325;
     meanInd = 350;
     COMstdScale = 0.075;
-
-    // Fine center finding
-    /*
-    NavgCenters = 15;
-    centerFxnType = 1;
-    centerMinRadBin = 125;
-    centerShellWidth = 170;
-    */
 
     cntrScale = 10;
     cntrMinScale = 1;
