@@ -165,6 +165,6 @@ if __name__ == '__main__':
     plt.xticks(range(0, int(maxQ), 1))
     plt.savefig("plots/compareFit-" + runs[idt] + ".png")
 
-    sMolexp.tofile("./results/staticDiffraction_" + runs[idt] + "[" + str(size) + "].dat");
-    sMolsim.tofile("./results/staticDiffraction_Sim_Bins[" + str(size) + "].dat");
+    sMolexp.tofile("./results/data-" + runs[idt] + "_staticSMS[" + str(size) + "].dat");
+    sMolsim.tofile("./results/sim_staticSMS[" + str(size) + "].dat");
 
