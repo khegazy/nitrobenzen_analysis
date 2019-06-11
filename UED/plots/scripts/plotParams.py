@@ -25,3 +25,4 @@ class pltParams:
     self.smearList = ["1.000000", "0.750000", "0.500000", "0.250000", "0.100000", "0.050000", "0.025000"]
 
     self.mergeResultFolder = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/"
+    self.preProcI0OutputDir  = "/reg/ued/ana/scratch/nitroBenzene/I0/"
