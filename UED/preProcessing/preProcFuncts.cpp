@@ -162,11 +162,17 @@ monthLengths[12] = 31;
       imgInfo.imgNum    = stoi(imgInfo.fileName.substr(ipos+1, 3));
       imgInfo.throttle  = -1;
     }
+    if (imgInfo.path.find("I0") != string::npos) {
+      imgInfo.imgNum -= 1;
+    }
     if (verbose) cout << "\tIMGNUM: " << imgInfo.imgNum;
 
     // Finding stage position
-    stgP1 = imgInfo.fileName.substr(imgInfo.fileName.length()-17, 3);
-    stgP2 = imgInfo.fileName.substr(imgInfo.fileName.length()-13, 4);
+    ipos = imgInfo.fileName.find("-", ipos+1);
+    //stgP1 = imgInfo.fileName.substr(imgInfo.fileName.length()-17, 3);
+    //stgP2 = imgInfo.fileName.substr(imgInfo.fileName.length()-13, 4);
+    stgP1 = imgInfo.fileName.substr(ipos+1, 3);
+    stgP2 = imgInfo.fileName.substr(ipos+5, 4);
     imgInfo.stagePos = stoi(stgP1+stgP2);
     if (verbose) cout << "\tSTAGE POSITION: " << imgInfo.stagePos;
 
@@ -176,10 +182,18 @@ monthLengths[12] = 31;
      
       // Get time image was taken
       times.clear();
-      DIR* dir = opendir(imgInfo.path.c_str());
+      std::string curPath = imgInfo.path;
+      if (imgInfo.path.find("I0") != string::npos) {
+        ipos = curPath.find("I0");
+        curPath = curPath.substr(0, ipos);
+        curPath += "images-ANDOR1/";
+      }
+      DIR* dir = opendir(curPath.c_str());
+      cout<<"dir: "<<curPath<<endl;
       struct dirent* ent;
       while ((ent = readdir(dir)) != NULL) {
         string txtName(ent->d_name);
+        cout<<"txtName: "<<txtName<<endl;
         if (txtName.length() < 10) continue;
         if (txtName.substr(txtName.length()-4, 4).compare(".txt") == 0) {
           time = 0;
@@ -200,15 +214,18 @@ monthLengths[12] = 31;
 
       if (verbose) cout << "\n\nFilling imgINFO\n";
 
-      for (auto itr: imgInfoMap) {
+      for (auto & itr: imgInfoMap) {
+        cout<<"itr: "<<itr.first<<" "<<times.size()<<" "<<itr.second.imgNum-1<<endl;
         itr.second.time = times[itr.second.imgNum-1];
         imgINFO.push_back(itr.second);
       }
+      cout<<"111"<<endl;
       imgInfoMap.clear();
 
       curScan = imgInfo.scan;
       curRun = imgInfo.run;
       curDate = imgInfo.date;
+      cout<<"222"<<endl;
     }
 
     if (verbose) cout << endl;
@@ -279,7 +296,11 @@ void ppFunct::makeRunLists(std::vector<imgProc::imgInfoStruct> &imgINFO,
       if (curDate.find("2016") != string::npos) {
         fileName += imgINFO[ifl].date + "_";
       }
-      fileName += imgINFO[ifl].run + "_Scan-" + to_string(imgINFO[ifl].scan) + ".txt";
+      fileName += imgINFO[ifl].run;
+      if (imgINFO[ifl].path.find("I0") != string::npos) {
+        fileName += "_I0";
+      }
+      fileName += "_Scan-" + to_string(imgINFO[ifl].scan) + ".txt";
 
       outList.open(fileName.c_str());
     }
