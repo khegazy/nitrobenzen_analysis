@@ -2,12 +2,14 @@
 
 parameterClass::parameterClass(std::string runName) {
 
+  run = runName;
+
   // Molecule
   molecule = initialState;
-  //molecule = finalState2;
   radicalNames.push_back("nitrobenzene");
   radicalNames.push_back("phenoxyRadical");
   radicalNames.push_back("phenylRadical");
+  radicalNames.push_back("nitrosobenzene");
   molName = radicalNames[molecule];
 
 
@@ -20,10 +22,10 @@ parameterClass::parameterClass(std::string runName) {
   imgSize = 895;
   imgEdgeBuffer = 20;
   hasRef = false;
-  refStagePos = -1;
+  refStagePosCut = -1;
   imgShutterTime = 20;
-  imgNormRadMin = 0.045; //0.06; //0.045;
-  imgNormRadMax = 0.721; //0.33; //0.721;
+  imgNormRadMin = 0.16; //0.25; //0.4; //0.045; //0.06; //0.045;
+  imgNormRadMax = 0.6; //0.721; //0.33; //0.721;
 
 
   // PV
@@ -31,6 +33,12 @@ parameterClass::parameterClass(std::string runName) {
   pvSampleTimes = 5;
   pressureSmear = 180;
   pvFolder      = "/reg/ued/ana/scratch/nitroBenzene/PV/";
+
+  // Power Scans
+  range1Qbegin = 1.8;
+  range1Qend   = 2.5;
+  range2Qbegin = 2.8;
+  range2Qend   = 3.75;
 
   // Time Zero
   tZeroQranges.resize(3);
@@ -75,10 +83,12 @@ parameterClass::parameterClass(std::string runName) {
   XrayWindow        = 20;
   xRayHitDist       = false;
 
+  refCorrection     = "NULL";
+
   hotPixel          = 1750;
   bkgSTDcut         = 15;
   shellWidth        = 1;
-  Npoly             = 5;
+  Npoly             = 3;
   stdIncludeLeft    = 3; //1;
   distSTDratioLeft  = 0.5;
   stdCutLeft        = 3.5;
@@ -87,7 +97,7 @@ parameterClass::parameterClass(std::string runName) {
   distSTDratioRight = 0.75;
   stdChangeRatio    = 0.02;
   stdCutRight       = 7; //2.25; //2.75;
-  outlierSTDcut     = 7.;
+  outlierSTDcut     = 3.;
   outlierVerbose    = false;
   radPixDist        = false;
   indicesPath       = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
@@ -143,11 +153,21 @@ parameterClass::parameterClass(std::string runName) {
   rMaxLegRat        = 0.75;
   rMaxAzmRat        = 0.07; //0.052;
   padDecayRat       = 0.5;
+
+  pCorrGaussFilter  = true;
+  pCorrButterFilter = false;
   //filterVar         = std::pow(NradAzmBins/3.25, 2);
-  filterVar         = std::pow(NradAzmBins/4, 2);
+  //filterVar         = std::pow(NradAzmBins/4, 2);
+  filterVar         = std::pow(NradAzmBins/5, 2);
+  pCorrWnHigh       = 0.6;
+  pCorrFilterOrder  = 2;
+  pCorrFilterType   = "lowpass";
   lowQfillSimScale  = 0.3;
   fillLowQfile      = "/reg/neh/home5/khegazy/analysis/nitrobenzene/UED/timeDepStudies/results/sim-phenoxyRadicalLowQfill[555].dat";
-  fillLowQtheory    = true;
+  fillLowQtheory    = false;
+  fillLowQzeros     = true;
+  fillLowQsine      = false;
+  fillLowQfitTheory = false;
 
 
   subtractReference = true;
@@ -166,14 +186,31 @@ parameterClass::parameterClass(std::string runName) {
   fsFitOffset     = false;
   fsFilterSMS     = false; 
   fsFilterVar     = std::pow(NradAzmBins/4.5, 2); 
+  fitQbegin       = 1.2;
+  fitQend         = 8;
   fsQfitBegin     = 1;
   fsQfitEnd       = 4;
   fsRfitBegin     = 1.1;
-  fsRfitEnd       = 8;
+  fsRfitEnd       = 5;
   finalStates.push_back("phenylRadical");
   finalStates.push_back("phenoxyRadical");
+  finalStates.push_back("nitrosobenzene");
+  intermediateStates.push_back("gsEP");
+  intermediateStates.push_back("gsNO");
+  intermediateStates.push_back("s1min");
+  intermediateStates.push_back("s1s0CI");
+  intermediateStates.push_back("s1t2STC");
+  intermediateStates.push_back("s2s1CI");
+  intermediateStates.push_back("s3min");
+  intermediateStates.push_back("s4min");
+  intermediateStates.push_back("t1min");
+  intermediateStates.push_back("t1s0STCEP");
+  intermediateStates.push_back("t1s0STC-NO");
+  intermediateStates.push_back("t2min");
+  intermediateStates.push_back("t2t1CI");
 
-  preProcOutputDir = "/reg/ued/ana/scratch/nitroBenzene/rootFiles/";
+  preProcOutputDir    = "/reg/ued/ana/scratch/nitroBenzene/rootFiles/";
+  preProcI0OutputDir  = "/reg/ued/ana/scratch/nitroBenzene/I0/";
   mergeScansOutputDir = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/";
   scanSearchOutputDir = "/reg/ued/ana/scratch/nitroBenzene/scanSearch/";
   radialPixelDist = "/reg/ued/ana/scratch/nitroBenzene/radialPixelDist/";
@@ -195,8 +232,10 @@ parameterClass::parameterClass(std::string runName) {
     QperPix = 0.0223;
     maxQleg = QperPix*imgSize/2;
 
-    hasRef = true;
-    refStagePos = 38.0;
+    hasRef          = true;
+    refStagePosCut  = 38.0;
+    std::cout<<"add references used in subtraction!\n";
+    std::exit(0);
 
     timeZero = 0.5;
     legStdCut = 1.5;
@@ -276,6 +315,7 @@ parameterClass::parameterClass(std::string runName) {
     QperPix = 0.0223;
     legStdCut = 3.0;
     NbinsSkip = 50; //27;
+    imgMatType = "uint16";
 
     // Filtering
     suppressBins = 75;
@@ -284,8 +324,9 @@ parameterClass::parameterClass(std::string runName) {
     // Measurement parameters
     timeZero = 0.3;
     hasRef = true;
-    refStagePos = 154.0;
-    imgMatType = "uint16";
+    refStagePosCut = 154.0;
+    refSubtractStagePos.push_back((int)(153.0*scaleStagePos));
+    refSubtractStagePos.push_back((int)(153.01*scaleStagePos));
 
     // Bad scans
     /*
@@ -357,74 +398,57 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    for (int ir=510; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 570;
-        col = ic - 535;
-        if (rad > std::sqrt(row*row + col*col)) {
-          nanMap[ir][ic] = NANVAL;
+    if (false) {
+      for (int ir=510; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 570;
+          col = ic - 535;
+          if (rad > std::sqrt(row*row + col*col)) {
+            nanMap[ir][ic] = NANVAL;
+          }
+          row = ir - 590;
+          col = ic - 518;
+          if (sqrt(row*row + col*col) < hRad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
-        row = ir - 590;
-        col = ic - 518;
-        if (sqrt(row*row + col*col) < hRad) {
-          nanMap[ir][ic] = NANVAL;
+      }
+
+      rad = 48;
+      for (int ir=420; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 565;
+          col = ic - 510;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+
+      rad = 40;
+      for (int ir=540; ir<610; ir++) {
+        for (int ic=560; ic<630; ic++) {
+          row = ir - 575;
+          col = ic - 575;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+
+      rad = 60;
+      for (int ir=560; ir<680; ir++) {
+        for (int ic=510; ic<630; ic++) {
+          row = ir - 585;
+          col = ic - 550;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
     }
 
-    rad = 48;
-    for (int ir=420; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 565;
-        col = ic - 510;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
 
-    rad = 40;
-    for (int ir=540; ir<610; ir++) {
-      for (int ic=560; ic<630; ic++) {
-        row = ir - 575;
-        col = ic - 575;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
-
-    rad = 60;
-    for (int ir=560; ir<680; ir++) {
-      for (int ic=510; ic<630; ic++) {
-        row = ir - 585;
-        col = ic - 550;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
-
-
-    /*
-    outlierMapSTDcut        = 2.0;//75;
-    outlierCoreValThresh    = 100000; //90; //65; //5e5;
-    outlierCoreRad          = 2; 
-    outlierClusterRad       = 3; 
-    outlierMinClusterSize   = 50;
-    outlierMinPixelSize     = outlierMinClusterSize;
-    outlierMinDensity       = 0.0;//0.2;
-    outlierShapeCut         = 4;
-    outlierBorderValThresh  = 10; //75; //1e5;
-    outlierBorderDistLimit  = 2;
-    outlierBorderRad        = 3;
-    outlierPadRad           = 7;
-    outlierrMaxScale        = 1;
-    outlierrMinScale        = 0;
-    outliercMaxScale        = 4;
-    outliercMinScale        = 0;
-    */
-   
     // Remove hole
     holeR = 587; //590;
     holeC = 512; //513;
@@ -460,12 +484,14 @@ parameterClass::parameterClass(std::string runName) {
     QperPix = 0.0223;
     legStdCut = 3.0;
     NbinsSkip = 50; //31;
+    imgMatType = "uint16";
 
     // Measurement parameters
     timeZero = 0.3;
     hasRef = true;
-    refStagePos = 154.0;
-    imgMatType = "uint16";
+    refStagePosCut = 154.0;
+    refSubtractStagePos.push_back((int)(153.0*scaleStagePos));
+    refSubtractStagePos.push_back((int)(153.01*scaleStagePos));
 
     // Filtering
     suppressBins = 75;
@@ -509,50 +535,52 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    for (int ir=510; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 570;
-        col = ic - 535;
-        if (rad > std::sqrt(row*row + col*col)) {
-          nanMap[ir][ic] = NANVAL;
-        }
-        row = ir - 590;
-        col = ic - 518;
-        if (sqrt(row*row + col*col) < hRad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
-
-    rad = 48;
-    for (int ir=420; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 565;
-        col = ic - 510;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+    if (false) {
+      for (int ir=510; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 570;
+          col = ic - 535;
+          if (rad > std::sqrt(row*row + col*col)) {
+            nanMap[ir][ic] = NANVAL;
+          }
+          row = ir - 590;
+          col = ic - 518;
+          if (sqrt(row*row + col*col) < hRad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    rad = 40;
-    for (int ir=540; ir<610; ir++) {
-      for (int ic=560; ic<630; ic++) {
-        row = ir - 575;
-        col = ic - 575;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      rad = 48;
+      for (int ir=420; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 565;
+          col = ic - 510;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    rad = 60;
-    for (int ir=560; ir<680; ir++) {
-      for (int ic=510; ic<630; ic++) {
-        row = ir - 585;
-        col = ic - 550;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      rad = 40;
+      for (int ir=540; ir<610; ir++) {
+        for (int ic=560; ic<630; ic++) {
+          row = ir - 575;
+          col = ic - 575;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+
+      rad = 60;
+      for (int ir=560; ir<680; ir++) {
+        for (int ic=510; ic<630; ic++) {
+          row = ir - 585;
+          col = ic - 550;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
     }
@@ -592,16 +620,24 @@ parameterClass::parameterClass(std::string runName) {
     QperPix = 0.0223;
     legStdCut = 3.0;
     NbinsSkip = 50; //28;
+    imgMatType = "uint16";
 
     // Measurement parameters
-    timeZero = 0.3;
+    timeZero = 0.0; //0.3;
     hasRef = true;
-    refStagePos = 154.0;
-    imgMatType = "uint16";
+    refStagePosCut = 154.0;
+    refSubtractStagePos.push_back((int)(153.0000001*scaleStagePos));
+    refSubtractStagePos.push_back((int)(153.0500001*scaleStagePos));
+    //refSubtractStagePos.push_back((int)(154.2350001*scaleStagePos));
+    //refSubtractStagePos.push_back((int)(154.2450001*scaleStagePos));
+    //refSubtractStagePos.push_back((int)(154.2550001*scaleStagePos));
+    refSubtractStagePos.push_back((int)(154.2650001*scaleStagePos));
 
     // Filtering
     suppressBins = 75;
     padMaxHeight = 2;
+
+    NfinalPoints  = 3;
 
     // Bad scans
     /*
@@ -615,7 +651,7 @@ parameterClass::parameterClass(std::string runName) {
 
     badScans.push_back(89);
     badScans.push_back(197);
-    for (int i=163; i<177; i++) {
+    for (int i=162; i<177; i++) {
       badScans.push_back(i);
     }
     badImages[19].push_back(1542450);
@@ -647,49 +683,51 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    for (int ir=520; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 570;
-        col = ic - 535;
-        if (rad > std::sqrt(row*row + col*col)) {
-          nanMap[ir][ic] = NANVAL;
-        }
-        row = ir - 590;
-        col = ic - 518;
-        if (sqrt(row*row + col*col) < hRad) {
-          nanMap[ir][ic] = NANVAL;
-        }
-      }
-    }
-
-    rad = 45;
-    for (int ir=420; ir<660; ir++) {
-      for (int ic=443; ic<583; ic++) {
-        row = ir - 565;
-        col = ic - 510;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+    if (false) {
+      for (int ir=520; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 570;
+          col = ic - 535;
+          if (rad > std::sqrt(row*row + col*col)) {
+            nanMap[ir][ic] = NANVAL;
+          }
+          row = ir - 590;
+          col = ic - 518;
+          if (sqrt(row*row + col*col) < hRad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    for (int ir=540; ir<610; ir++) {
-      for (int ic=560; ic<630; ic++) {
-        row = ir - 575;
-        col = ic - 575;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      rad = 45;
+      for (int ir=420; ir<660; ir++) {
+        for (int ic=443; ic<583; ic++) {
+          row = ir - 565;
+          col = ic - 510;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
-    }
 
-    rad = 58;
-    for (int ir=560; ir<680; ir++) {
-      for (int ic=510; ic<630; ic++) {
-        row = ir - 585;
-        col = ic - 550;
-        if (sqrt(row*row + col*col) < rad) {
-          nanMap[ir][ic] = NANVAL;
+      for (int ir=540; ir<610; ir++) {
+        for (int ic=560; ic<630; ic++) {
+          row = ir - 575;
+          col = ic - 575;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+
+      rad = 58;
+      for (int ir=560; ir<680; ir++) {
+        for (int ic=510; ic<630; ic++) {
+          row = ir - 585;
+          col = ic - 550;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
         }
       }
     }
@@ -731,17 +769,19 @@ parameterClass::parameterClass(std::string runName) {
     QperPix = 0.0223;
     legStdCut = 3.0;
     NbinsSkip = 50; //25;
+    imgMatType    = "uint16";
 
     // Filtering
     suppressBins = 75;
     padMaxHeight = 6.5;
 
     // Measurement parameters
-    timeZero      = 0.125;
-    hasRef        = true;
-    refStagePos   = 154.0;
-    imgMatType    = "uint16";
-    NfinalPoints  = 4;
+    timeZero        = 0.0;
+    hasRef          = true;
+    refStagePosCut  = 154.0; //154.290;
+    refSubtractStagePos.push_back((int)(153.0*scaleStagePos));
+    refSubtractStagePos.push_back((int)(153.01*scaleStagePos));
+    NfinalPoints    = 4;
 
     // Bad scans
     /*
@@ -752,9 +792,66 @@ parameterClass::parameterClass(std::string runName) {
     badScans.push_back(108);
     badScans.push_back(121);
     */
+    for (int i=1; i<=15; i++) {
+      badScans.push_back(i);
+    }
+    for (int i=47; i<=49; i++) {
+      badScans.push_back(i);
+    }
     for (int i=100; i<=121; i++) {
       badScans.push_back(i);
     }
+    //for (int i=1; i<=121; i++) {
+    //  badImages[i].push_back(1530000);
+    //}
+
+    /*
+    badScans.push_back(79);
+    badScans.push_back(53);
+    badScans.push_back(23);
+    badScans.push_back(37);
+    badScans.push_back(87);
+    badScans.push_back(18);
+    badScans.push_back(55);
+    badScans.push_back(39);
+    */
+
+/*
+    badScans.push_back(19);
+    badScans.push_back(75);
+    badScans.push_back(25);
+    badScans.push_back(92);
+    badScans.push_back(74);
+    badScans.push_back(48);
+*/
+
+    /*
+    for (int i=58; i<=68; i++) {
+      badScans.push_back(i);
+    }
+    */
+
+    //badScans.push_back(37);
+    //badScans.push_back(74);
+    //badScans.push_back(40);
+    //badScans.push_back(33);
+    //badScans.push_back(83);
+    //badScans.push_back(29);
+
+    /*
+    for (int i=32; i<=37; i++) {
+      badScans.push_back(i);
+    }
+    badScans.push_back(73);
+    badScans.push_back(74);
+    badScans.push_back(29);
+    */
+
+
+    //badScans.push_back(18);
+    //badScans.push_back(40);
+    //badScans.push_back(92);
+    //badScans.push_back(52);
     /*
     badImages[7].push_back(1530100);
     badImages[20].push_back(1543950);
@@ -828,7 +925,8 @@ parameterClass::parameterClass(std::string runName) {
 
     // Background
     backgroundImage = "backgroundImg-20180627_1116.dat";
-    hasLaserBkg = true;
+    //refCorrection   = "/reg/neh/home/khegazy/analysis/nitrobenzene/UED/mergeScans/results/data-20180627_1551_azmAvgDiff_referenceCorrection[555].dat";
+    hasLaserBkg     = true;
     laserClusterRemoval = false;
 
     int row, col;
@@ -914,8 +1012,27 @@ parameterClass::parameterClass(std::string runName) {
         }
       }
     }
+      rad = 15;
+      for (int ir=700; ir<747; ir++) {
+        for (int ic=57; ic<98; ic++) {
+          row = ir - 722;
+          col = ic - 78;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
+      rad = 20;
+      for (int ir=560; ir<610; ir++) {
+        for (int ic=342; ic<392; ic++) {
+          row = ir - 582;
+          col = ic - 367;
+          if (sqrt(row*row + col*col) < rad) {
+            nanMap[ir][ic] = NANVAL;
+          }
+        }
+      }
 
- 
     // Remove hole
     holeR = 590; //587; //590;
     holeC = 513; //512; //513;
@@ -975,6 +1092,31 @@ parameterClass::parameterClass(std::string runName) {
         break;
       }
 
+      case finalState3: {
+        xyzFiles.push_back("nitrosobenzene.xyz");
+        xyzFiles.push_back("O.xyz");
+        break;
+      }
+
+      /*
+      case intermediateStates: {                    
+        // Intermediate States
+        xyzFiles.push_back("gsEP.xyz");
+        xyzFiles.push_back("gsNO.xyz");
+        xyzFiles.push_back("s1min.xyz");
+        xyzFiles.push_back("s1s0CI.xyz");
+        xyzFiles.push_back("s1t2STC.xyz");
+        xyzFiles.push_back("s2s1CI.xyz");
+        xyzFiles.push_back("s3min.xyz");
+        xyzFiles.push_back("s4min.xyz");
+        xyzFiles.push_back("t1min.xyz");
+        xyzFiles.push_back("t1s0STCEP.xyz");
+        xyzFiles.push_back("t1s0STC-NO.xyz");
+        xyzFiles.push_back("t2min.xyz");
+        xyzFiles.push_back("t2t1CI.xyz");
+      }
+      */
+
       default: {
         std::cerr << "ERROR: do not recognize molecule enum!!!\n";
         exit(0);
@@ -996,18 +1138,14 @@ parameterClass::parameterClass(std::string runName) {
   readoutLegBinEnd   = readoutEnd*NradLegBins;
 
 
-  refStagePos *= scaleStagePos;
-  maxQleg   = QperPix*NradLegBins;
+  refStagePosCut *= scaleStagePos;
   maxQazm   = QperPix*NradAzmBins;
   maxRbins  = rMaxAzmRat*((NradAzmBins + NautCpadding)/2 + 1);
   maxR      = maxRbins*(2*PI/(QperPix*(NradAzmBins + NautCpadding)));
-  std::cout<<"testing: "<<rMaxAzmRat<<"  "<<(NradAzmBins + NautCpadding)/2 + 1<<"  "<<QperPix<<"  "<<std::endl;
 
   R1Bin = 1/(2*PI/(QperPix*(NradAzmBins + NautCpadding)));
   R8Bin = 8/(2*PI/(QperPix*(NradAzmBins + NautCpadding)));
-  std::cout<<"Rbins: "<<R1Bin<<"   "<<R8Bin<<"  "<<NradAzmBins + NautCpadding<<std::endl;
 
-  std::cout<<"maxR: "<<maxR<<std::endl;
 }
 
 
