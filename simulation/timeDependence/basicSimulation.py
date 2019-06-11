@@ -4,6 +4,7 @@ from subprocess import call
 import sys
 sys.path.append('/reg/neh/home/khegazy/baseTools/UEDanalysis/plots/scripts')
 from plotClass import plotCLASS
+from scipy.ndimage import gaussian_filter
 
 plc = plotCLASS()
 
@@ -72,7 +73,8 @@ class dissociation:
     self.endTime = 1. #ps
     self.m_N2O = (2*8 + 7)*1.7e-27      #kg
     self.m_phenyl = (5 + 6*6)*1.7e-27   #kg
-    self.momentum = np.sqrt(4.8e-19*2*self.m_N2O*self.m_phenyl/(self.m_N2O + self.m_phenyl))
+    self.momentum = 0.15*np.sqrt(4.8e-19*2*self.m_N2O*self.m_phenyl/(self.m_N2O + self.m_phenyl))
+    #self.momentum = np.sqrt(4.8e-19*2*self.m_N2O*self.m_phenyl/(self.m_N2O + self.m_phenyl))
     self.velocityScale = (self.momentum/self.m_N2O)*1e10*1e-12    #Angs/ps
     #self.velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-12   #Angs/ps
     print("dissocition (angs/ps): ", self.velocityScale)
@@ -149,6 +151,61 @@ class rotation:
           + self.rotationFreq*(time - self.deltaTaccStop)
     else:
       theta = 0.5*self.rotationAcc*time**2
+
+    self.thetas.append(theta % 2*np.pi)
+    # Rodrigues Rotation Formula
+    rotationMat = np.eye(3) + np.sin(theta)*self.W + (1 - np.cos(theta))*self.W2
+    #print(atomsOrig["O0"].position - atomsOrig["N0"].position)
+    #print(np.dot(rotationMat,atomsOrig["O0"].position - atomsOrig["N0"].position))
+    atoms["O0"].position = atomsOrig["N0"].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["O0"].position - atomsOrig["N0"].position)
+    atoms["O1"].position = atomsOrig["N0"].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["O1"].position - atomsOrig["N0"].position)
+
+    self.distO1.append(np.linalg.norm(atoms["O0"].position-atoms["C1"].position))
+    self.distO2.append(np.linalg.norm(atoms["O1"].position-atoms["C1"].position))
+    print("testDist inUp: ",np.linalg.norm(atoms["O0"].position-atoms["N0"].position))
+    return atoms
+
+
+class rotate90:
+
+  def __init__(self, atoms):
+    self.startTime      = 0. #ps
+    self.endTime        = 0.2 #ps
+    self.rotationPeriod = 0.8 #ps
+    self.rotationFreq   = 2.*np.pi/self.rotationPeriod
+    self.thetas = []
+    self.distO1 = []
+    self.distO2 = []
+
+    ###  Find carbon closest to N  ###
+    closestC = ''
+    minDist = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C':
+        continue
+      
+      if np.linalg.norm(val.position - atoms['N0'].position) < minDist:
+        minDist   = np.linalg.norm(val.position - atoms['N0'].position)
+        closestC  = key
+
+    ###  Calculate rotation axis  ###
+    self.angMomVec = atoms['N0'].position - atoms[closestC].position
+    self.angMomVec /= np.linalg.norm(self.angMomVec)
+
+    self.W = np.array( [[0, -1*self.angMomVec[2], self.angMomVec[1]],
+                        [self.angMomVec[2], 0, -1*self.angMomVec[0]],
+                        [-1*self.angMomVec[1], self.angMomVec[0], 0]])
+    self.W2 = np.dot(self.W, self.W)
+
+  def update(self, atoms, atomsOrig, time):
+
+    theta = self.rotationFreq*time
 
     self.thetas.append(theta % 2*np.pi)
     # Rodrigues Rotation Formula
@@ -266,7 +323,8 @@ if __name__ == "__main__":
 
   simulations = {
       "dissociation_phenyl-N2O" : dissociation(atomsOrig),
-      "rotation_nitrobenzene"   : rotation(atomsOrig)
+      "rotation_nitrobenzene"   : rotation(atomsOrig),
+      "rotate90_nitrobenzene"   : rotate90(atomsOrig)
       #"bending_nitrobenzene"    : bending(atomsOrig)
       }
 
@@ -348,6 +406,11 @@ if __name__ == "__main__":
       diffTD[i,:]     = diffTD[i,:] - groundState
       diffSMSTD[i,:]  = diffSMSTD[i,:] - groundStateSMS
 
+    # Smear Time Resolution
+    filteredTD    = gaussian_filter(diffTD, [(0.12/2.355)/dt,0])
+    filteredSMSTD = gaussian_filter(diffSMSTD, [(0.12/2.355)/dt,0])
+
+
     outFileName = simFolder + "timeDependent/"\
         + name + "_azmAvgSMS"\
         + "_Qmax-12.376500_Ieb-5.000000"\
@@ -355,6 +418,14 @@ if __name__ == "__main__":
         + str(diffTD.shape[0])+","+str(diffTD.shape[1])+"].dat"
     with open(outFileName, "wb") as outFile:
       diffSMSTD.tofile(outFile)
+    
+    outFileName = simFolder + "timeDependent/"\
+        + name + "_azmAvgSMS_timeSmoothed"\
+        + "_Qmax-12.376500_Ieb-5.000000"\
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["\
+        + str(diffTD.shape[0])+","+str(diffTD.shape[1])+"].dat"
+    with open(outFileName, "wb") as outFile:
+      filteredSMSTD.tofile(outFile)
 
     outFileName = simFolder+"timeDependent/"\
         + name + "_azmAvg"\
@@ -364,6 +435,13 @@ if __name__ == "__main__":
     with open(outFileName, "wb") as outFile:
       diffTD.tofile(outFile)
 
+    outFileName = simFolder+"timeDependent/"\
+        + name + "_azmAvg_timeSmoothed"\
+        + "_Qmax-12.376500_Ieb-5.000000"\
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["\
+        + str(diffTD.shape[0])+","+str(diffTD.shape[1])+"].dat"
+    with open(outFileName, "wb") as outFile:
+      filteredTD.tofile(outFile)
 
 
     timeFileName = simFolder+"timeDependent/"\
