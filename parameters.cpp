@@ -51,12 +51,18 @@ parameterClass::parameterClass(std::string runName) {
   tZeroRatio[1] = 0;
 
   // Merging scans
-  normalizeImgs = false;
-  Qnormalize = true;
-  mergeSTDscale = 3; //2.6; FIX ME CHANGE compare to Thomas
-  mergeImageSTDScale = 2.3;
-  legImageNoiseCut = 12;
-  azmImageNoiseCut = 105;
+  mergeNormalizeImgs  = false;
+  Qnormalize          = true;
+  mergeSTDscale       = 3; //2.6; FIX ME CHANGE compare to Thomas
+  mergeImageSTDScale  = 2.3;
+  legImageNoiseCut    = 12;
+  azmImageNoiseCut    = 105;
+
+  testMergeNbootStrap = false;
+  useBootstrapSEM     = true;
+  computeBootstrapSEM = true;
+  mergeNbootstrap     = 10000;
+
 
   timeWnHigh = 0.8;
   timeFiltOrder  = 5;
@@ -99,7 +105,7 @@ parameterClass::parameterClass(std::string runName) {
   stdCutRight       = 7; //2.25; //2.75;
   outlierSTDcut     = 3.;
   outlierVerbose    = false;
-  radPixDist        = false;
+  plotRadPixDist    = false;
   indicesPath       = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
 
   outlierMapSTDcut        = 1.5;//75;
@@ -156,6 +162,7 @@ parameterClass::parameterClass(std::string runName) {
 
   pCorrGaussFilter  = true;
   pCorrButterFilter = false;
+  pCorrQcut         = 8;
   //filterVar         = std::pow(NradAzmBins/3.25, 2);
   //filterVar         = std::pow(NradAzmBins/4, 2);
   filterVar         = std::pow(NradAzmBins/5, 2);
@@ -192,6 +199,11 @@ parameterClass::parameterClass(std::string runName) {
   fsQfitEnd       = 4;
   fsRfitBegin     = 1.1;
   fsRfitEnd       = 5;
+
+  simHotFinalState  = true;
+  hotFSrefVar       = filterVar*1.1;
+  hotFStdepVar      = filterVar*0.9;
+
   finalStates.push_back("phenylRadical");
   finalStates.push_back("phenoxyRadical");
   finalStates.push_back("nitrosobenzene");
@@ -213,13 +225,14 @@ parameterClass::parameterClass(std::string runName) {
   preProcI0OutputDir  = "/reg/ued/ana/scratch/nitroBenzene/I0/";
   mergeScansOutputDir = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/";
   scanSearchOutputDir = "/reg/ued/ana/scratch/nitroBenzene/scanSearch/";
-  radialPixelDist = "/reg/ued/ana/scratch/nitroBenzene/radialPixelDist/";
-  backgroundImage = "NULL";
-  backgroundFolder = "/reg/ued/ana/scratch/nitroBenzene/background/";
-  indexPath = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
-  pltCent = false;
-  verbose = false; 
-  pltVerbose = false;
+  radialPixelDist     = "/reg/ued/ana/scratch/nitroBenzene/radialPixelDist/";
+  backgroundImage     = "NULL";
+  backgroundFolder    = "/reg/ued/ana/scratch/nitroBenzene/background/";
+  indexPath           = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
+
+  pltCent     = false;
+  verbose     = false; 
+  pltVerbose  = false;
 
 
   scaleStagePos = 1e4;
@@ -629,9 +642,19 @@ parameterClass::parameterClass(std::string runName) {
     refSubtractStagePos.push_back((int)(153.0000001*scaleStagePos));
     refSubtractStagePos.push_back((int)(153.0500001*scaleStagePos));
     //refSubtractStagePos.push_back((int)(154.2350001*scaleStagePos));
-    //refSubtractStagePos.push_back((int)(154.2450001*scaleStagePos));
+    refSubtractStagePos.push_back((int)(154.2450001*scaleStagePos));
     //refSubtractStagePos.push_back((int)(154.2550001*scaleStagePos));
     refSubtractStagePos.push_back((int)(154.2650001*scaleStagePos));
+
+    // Bad Regions
+    std::pair<float, float> brp;
+    brp.first = 1;    brp.second = 2;
+    badRegions[1530500].push_back(brp);
+    brp.first = 5.5;  brp.second = 6.5;
+    badRegions[1530000].push_back(brp);
+    brp.first = 4.6;  brp.second = 5.2;
+    badRegions[1542450].push_back(brp);
+
 
     // Filtering
     suppressBins = 75;
