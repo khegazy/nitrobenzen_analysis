@@ -19,6 +19,7 @@ if __name__ == '__main__':
 
   args = argP.parse_args()
 
+  molecule = "nitroBenzene"
   NdataBins = 50
   scaleSimBins = 1
 
@@ -32,17 +33,18 @@ if __name__ == '__main__':
   screenDist = 4.
   beamCut    = 4
 
-  resultFolder = "/reg/neh/home/khegazy/analysis/nitroBenzene/UED/qScale/results/"
-  simFolder = "/reg/ued/ana/scratch/nitroBenzene/simulations/"
-  simExeFile = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/simulateRefPatterns.exe"
+  simFolder = "/reg/ued/ana/scratch/"\
+      + molecule + "/simulations/"
+  simExeFile = "/reg/neh/home/khegazy/analysis/"\
+      + molecule + "/simulation/diffractionPattern/simulateRefPatterns.exe"
+  mergeFolder = "/reg/ued/ana/scratch/"\
+      + molecule + "/mergeScans/"
 
   dataList = []
-  #runs = ["20180701_0746", "20180629_1630"]#, "20180627_1551", "20180630_1925"]#, "20161102_LongScan1", "All"]
-  runs = ["20180627_1551", "20180629_1630", "20180630_1925", "20180701_0746"]#, "20161102_LongScan1", "All"]
-  #runs = ["20180627_1551", "20180630_1925"]#, "20161102_LongScan1", "All"]
-  #runs = ["20180701_0746"]
+  runs = ["20180627_1551", "20180629_1630", "20180630_1925", "20180701_0746"]
+
   for rname in runs:
-    fileName = "../mergeScans/results/referenceAzm-" + rname + "[555].dat"
+    fileName = mergeFolder + "data-" + rname + "-referenceAzm[555].dat"
     if os.path.isfile(fileName):
       dataList.append(np.fromfile(fileName, dtype = np.double) + 0.03)
     else:
@@ -60,14 +62,20 @@ if __name__ == '__main__':
   #####  Import simulation  #####
 
   ###  Find zero crossings  ###
-  atmDiffFile, molDiffFile = getSimNames(simFolder, size, 
-      maxQ, Iebeam, screenDist, elEnergy)
+  atmDiffFile, molDiffFile = getSimNames(
+                                simFolder, 
+                                "nitrobenzene", #molecule, 
+                                size, 
+                                maxQ, 
+                                Iebeam, 
+                                screenDist, 
+                                elEnergy)
 
   print(atmDiffFile, molDiffFile)
   print("maxQ", maxQ)
   if not os.path.isfile(atmDiffFile):
     call([simExeFile,
-          #"-mol", "nitrobenzene",
+          #"-mol", molecule,
           "-maxQ", str(maxQ),
           #"-QperPix", str(QperPix),
           "-Odir", simFolder,
@@ -145,6 +153,8 @@ if __name__ == '__main__':
     sMolexp  = (data-expfit)*Q/atmDiff
     sMolsim  = molDiff*Q/atmDiff
     sMolsim  *= np.min(sMolexp[size*0.25:size*0.5])/np.min(sMolsim[size*0.25:size*0.5]) 
+    for j,k in enumerate(Q/atmDiff):
+      print(j,k)
 
     plt.figure()
     plt.plot(Q,sMolexp,linewidth=2,label='Experimental Molecular Diffraction')
