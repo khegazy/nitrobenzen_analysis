@@ -189,11 +189,9 @@ monthLengths[12] = 31;
         curPath += "images-ANDOR1/";
       }
       DIR* dir = opendir(curPath.c_str());
-      cout<<"dir: "<<curPath<<endl;
       struct dirent* ent;
       while ((ent = readdir(dir)) != NULL) {
         string txtName(ent->d_name);
-        cout<<"txtName: "<<txtName<<endl;
         if (txtName.length() < 10) continue;
         if (txtName.substr(txtName.length()-4, 4).compare(".txt") == 0) {
           time = 0;
