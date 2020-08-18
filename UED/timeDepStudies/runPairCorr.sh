@@ -1,10 +1,14 @@
 #!/bin/bash 
 
-./pairCorr.exe 20180627_1551 -FillQ zeros
-#./pairCorr.exe 20180627_1551 -lowQtheory ./results/sim-phenoxyRadical_LowQfill_scale-0.400000_Bins[555].dat 
-#./pairCorr.exe 20180629_1630 -lowQtheory ./results/sim-phenoxyRadical_LowQfill_scale-0.400000_Bins[555].dat 
-#./pairCorr.exe 20180630_1925 -lowQtheory ./results/sim-phenoxyRadical_LowQfill_scale-0.400000_Bins[555].dat
-#./pairCorr.exe 20180701_0746 -lowQtheory ./results/sim-phenoxyRadical_LowQfill_scale-0.400000_Bins[555].dat
+#LOWQ=-FillQ zeros 
+#LOWQ=-lowQtheory ./results/sim-phenoxyRadical_LowQfill_scale-0.400000_Bins[555].dat
+
+./pairCorr.exe 20180627_1551  
+./pairCorr.exe 20180629_1630 
+#./pairCorr.exe 20180630_1925 
+#./pairCorr.exe 20180701_0746 
+
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/ -Fname phenoxyRadical_
 
 #SMOOTH='0.025000'
 #./pairCorr.exe 20180627_1551 -Idir /reg/ued/ana/scratch/nitroBenzene/mergeScans/ -Fname data-20180627_1551-tSmeared-${SMOOTH}-sMsAzmAvgDiff[1152,555].dat -Osuf -tSmeared -FillQ zeros
@@ -16,8 +20,22 @@
 #####  Time Dependend Simulation  #####
 #######################################
 
-#NTIME=450
-#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname dissociation_phenyl-N2O_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[400,555].dat -Osuf -dissociation-phenyl-N2O -FillQ zeros 
+NTIME=450
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname dissociation_phenyl-N2O_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[400,555].dat -Osuf -dissociation_phenyl-N2O -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname dissociation_phenyl-N2O_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[400,555].dat -Osuf -dissociation_phenyl-N2O_timeSmoothed -FillQ zeros
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname dissociation_nitrosobenzene-O_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[400,555].dat -Osuf -dissociation_phenyl-N2O -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname dissociation_nitrosobenzene-O_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[400,555].dat -Osuf -dissociation_nitrosobenzene-O_timeSmoothed -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname dissociation_nitrosobenzene-O_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[400,555].dat -Osuf -dissociation_nitrosobenzene-O -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname rotate90_nitrobenzene_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[80,555].dat -Osuf -rotate90_timeSmoothed -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname rotate90_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[80,555].dat -Osuf -rotate90 -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname NOflop_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -NOflop -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname NOflop_nitrobenzene_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -NOflop_timeSmoothed -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname diagBend_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -diagBend -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname diagBend_nitrobenzene_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -diagBend_timeSmoothed -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname axisBend_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -axisBend -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname axisBend_nitrobenzene_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -axisBend_timeSmoothed -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname C0flop_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -C0flop -FillQ zeros 
+#./pairCorr.exe simulateReference -Idir /reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/timeDependent -Fname C0flop_nitrobenzene_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[200,555].dat -Osuf -C0flop_timeSmoothed -FillQ zeros 
 #./pairCorr.exe simulateReference -Idir /reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/ -Fname rotation_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000_elE-3700000.000000_Bins[800,555].dat -Osuf -rotation-nitrobenzene -FillQ false 
 
 #######################################################
