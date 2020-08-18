@@ -26,36 +26,37 @@ optsCorr = {
     #"smooth"  : 7 
     }
 
-"""
-optsDiff["labels"] = []
-optsCorr["labels"] = []
-for iq in qBins:
-  optsDiff["labels"].append(str(iq*0.0223) + r" $\AA^{-1}$")
-  optsCorr["labels"].append(str(iq*0.0223) + r" $\AA^{-1}$")
-  """
 
 for i,run in enumerate(runs):
 
-  print("run", run)
-  times = np.fromfile("../../../mergeScans/results/timeDelays["
-      + str(timeSteps[i] + 1) + "].dat", np.double)
-  times = times[:-1]
+  timeDelay = np.fromfile("../../../mergeScans/results/timeDelays-"
+     +run + "_bins[" + str(params.timeSteps[i] + 1) + "].dat", np.double)
 
-  if run is "20180627_1551":
-    optsDiff["yLim"] = [-0.009, 0.008]
-  elif run is "20180629_1630":
-    optsDiff["yLim"] = [-0.003, 0.007]
 
-  fileName = params.mergeResultFolder\
-      + "/data-" + run + "-azmAvgDiff"\
-      + "[" + str(timeSteps[i]) + "," + str(params.NradAzmBins) + "].dat"
-  plc.printLineOut(fileName, 1, qBins, "../data-" + run + "-timeLO", 
-      X=times, options=optsDiff)
+  dfrctnRanges = [[1.25, 2.25], [2, 3], [3,4], [4, 5.5], [6, 7]]
+  dfrctnLOs, dfrctnErrLOs = plc.getRangeLineOut(mergeFolder + "data-"
+      + run + "-azmAvgDiff["
+      + str(params.timeSteps[i])
+      + "," + str(params.NradAzmBins) + "].dat",
+    1,
+    dfrctnRanges,
+    np.linspace(0, 1, params.NradAzmBins)*params.QrangeAzm[-1],
+    errorFileName = mergeFolder + "data-"
+        + run + "-azmAvgSEM["
+        + str(params.timeSteps[i]) + ","
+        + str(params.NradAzmBins) + "].dat")
+ 
 
-  """
-  fileName = "../../results/data-"\
-      + run + "-pairCorrOdd["\
-      + str(timeSteps[i]) + "," + str(params.NpairCorrBins) + "].dat"
-  plc.printLineOut(fileName, 0, timeInds, "../data-" + run + "-pairCorrLO", 
-      xRange=params.Rrange, options=optsCorr)
-  """
+  pCorrRanges = [[1.1, 1.5], [2, 2.75], [4, 4.5]]
+  pCorrLOs, pCorrErrLOs = plc.getRangeLineOut("../../results/data-"
+          + run + "_pairCorrOdd["
+          + str(params.timeSteps[i]) + ","
+          + str(params.NpairCorrBins) + "].dat",
+        1,
+        pCorrRanges,
+        np.linspace(0, 1, params.NpairCorrBins)*params.Rrange[-1],
+        errorFileName = mergeFolder + "data-"
+            + run + "-pairCorrSEM["
+            + str(params.timeSteps[i]) + ","
+            + str(params.NpairCorrBins) + "].dat")
+

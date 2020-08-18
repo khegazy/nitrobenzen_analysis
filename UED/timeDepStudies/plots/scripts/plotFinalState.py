@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import glob
 sys.path.append('../../../plots/scripts')
 sys.path.append('/reg/neh/home/khegazy/baseTools/UEDanalysis/plots/scripts')
 from plotClass import plotCLASS
@@ -24,6 +25,10 @@ phenylPC  = "../../results/sim-phenylRadical_pairCorrOdd["\
     + str(params.NpairCorrBins) + "].dat"
 nitrosobenzenePC  = "../../results/sim-nitrosobenzene_pairCorrOdd["\
     + str(params.NpairCorrBins) + "].dat"
+hotGroundStatePC  = "../../results/sim-hotGroundState_pairCorrOdd["\
+    + str(params.NpairCorrBins) + "].dat"
+hotTripletStatePC  = "../../results/sim-hotTripletState_pairCorrOdd["\
+    + str(params.NpairCorrBins) + "].dat"
 phenoxyRAW = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
     + "phenoxyRadical_diffFinalState["\
     + str(params.NradAzmBins) + "].dat"
@@ -32,6 +37,12 @@ phenylRAW = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
     + str(params.NradAzmBins) + "].dat"
 nitrosobenzeneRAW = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
     + "nitrosobenzene_diffFinalState["\
+    + str(params.NradAzmBins) + "].dat"
+hotGroundStateRAW = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
+    + "hotGroundState_diffFinalState["\
+    + str(params.NradAzmBins) + "].dat"
+hotTripletStateRAW = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
+    + "hotTripletState_diffFinalState["\
     + str(params.NradAzmBins) + "].dat"
 phenoxySMS = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
     + "phenoxyRadical_sMsFinalState["\
@@ -42,11 +53,18 @@ phenylSMS = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
 nitrosobenzeneSMS = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
     + "nitrosobenzene_sMsFinalState["\
     + str(params.NradAzmBins) + "].dat"
+hotGroundStateSMS = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
+    + "hotGroundState_sMsFinalState["\
+    + str(params.NradAzmBins) + "].dat"
+hotTripletStateSMS = "/reg/ued/ana/scratch/nitroBenzene/simulations/"\
+    + "hotTripletState_sMsFinalState["\
+    + str(params.NradAzmBins) + "].dat"
 
+simLabels = ["Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene + O", "hot S0", "hot T1"]
 
 opts = {
   "xTitle"     : r"Q [$\AA^{-1}$]",
-  "labels"     : ["Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene + O"],
+  "labels"     : simLabels,
   "legOpts"      : {"fontsize" : 15},
   "xTitleSize"  : 18,
   "yTitleSize"  : 18,
@@ -54,17 +72,18 @@ opts = {
   "yTickSize"   : 15
   }
 
-plc.print1d([phenoxyRAW, phenylRAW, nitrosobenzeneRAW],
+plc.print1d([phenoxyRAW, phenylRAW, nitrosobenzeneRAW, hotGroundStateRAW, hotTripletStateRAW],
     "../sim-compareTheories_finalState",
     xRange=params.QrangeAzm,
     options=opts)
 
 opts["ySlice"] = [-1.2, 0.6]
-plc.print1d([phenoxySMS, phenylSMS, nitrosobenzeneSMS],
+opts["noData"] = True
+plc.print1d([phenoxySMS, phenylSMS, nitrosobenzeneSMS, hotGroundStateSMS, hotTripletStateSMS],
     "../sim-compareTheories_sMsFinalState",
     xRange=params.QrangeAzm,
     options=opts)
-
+del opts["noData"]
 
 atoms = ["hydrogen", "carbon", "nitrogen", "oxygen"]
 atomZ = [1, 6, 7, 8]
@@ -97,14 +116,15 @@ for i,bt in enumerate(bondTypes):
 
 
 opts = {
-  "xTitle"     : r"R [$\AA$]",
-  "labels"     : ["Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene + O"] + bondTypes
+  "xTitle"      : r"R [$\AA$]",
+  "labels"      : simLabels + bondTypes,
+  "ySlice"      : [-0.15, 0.1],
   #"labels"     : ["Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene + O"],
-  #"legOpts"     : {"fontsize" : 15},
-  #"xTitleSize"  : 18,
-  #"yTitleSize"  : 18,
-  #"xTickSize"   : 15,
-  #"yTickSize"   : 15
+  "legOpts"     : {"fontsize" : 15},
+  "xTitleSize"  : 18,
+  "yTitleSize"  : 18,
+  "xTickSize"   : 15,
+  "yTickSize"   : 15
  
   }
 pcTheoryImages = []
@@ -114,15 +134,21 @@ image,_ = plc.importImage(phenylPC)
 pcTheoryImages.append(image)
 image,_ = plc.importImage(nitrosobenzenePC)
 pcTheoryImages.append(image)
+image,_ = plc.importImage(hotGroundStatePC)
+pcTheoryImages.append(image)
+image,_ = plc.importImage(hotTripletStatePC)
+pcTheoryImages.append(image)
 plotImages = np.array(pcTheoryImages)
 #plotImages = np.vstack((pcTheoryImages, bondCoeffs/2000.))
 
 
+opts["noData"] = True
 plc.print1d(plotImages,
     "../sim-compareTheories_finalState_pairCorrOdd",
     xRange=params.Rrange,
     options=opts,
     isFile=False)
+del opts["noData"]
 
 
 ###################################
@@ -134,7 +160,7 @@ for i,run in enumerate(runs):
 
   #####  Pair Correlation  #####
   opts = {
-    "labels"  : ["Data", "Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene"] + bondTypes,
+    "labels"  : ["Data"] + simLabels,# + bondTypes,
     #"labels"  : ["Data", "Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene + O"],
     "xTitle"  : r"R [$\AA$]",
     #"legOpts"      : {"fontsize" : 15},
@@ -143,7 +169,7 @@ for i,run in enumerate(runs):
     #"xTickSize"   : 15,
     #"yTickSize"   : 15
   }
-  opts["ySlice"] = [-0.3, 0.4]
+  opts["ySlice"] = [-0.4, 0.5]
 
   dataImage,_ = plc.importImage(params.mergeResultFolder + "/data-"\
               + run + "_pairCorrFinalState["\
@@ -151,39 +177,66 @@ for i,run in enumerate(runs):
   scale = 1./np.abs(np.amin(dataImage[60:]))
   dataImage *= scale
 
-
   pcTheoryImages = []
+  pcTheoryImages_bestFits = []
   image,_ = plc.importImage(
-      "../../results/sim-phenoxyRadical_pairCorrFinalState_scaled["
-        + str(params.NpairCorrBins) + "].dat")
+      "../../results/sim-phenoxyRadical_pairCorrFinalState_scaled-"
+        + run + "[" + str(params.NpairCorrBins) + "].dat")
   image *= scale
   pcTheoryImages.append(image)
   image,_ = plc.importImage(
-      "../../results/sim-phenylRadical_pairCorrFinalState_scaled["
-        + str(params.NpairCorrBins) + "].dat")
+      "../../results/sim-phenylRadical_pairCorrFinalState_scaled-"
+        + run + "[" + str(params.NpairCorrBins) + "].dat")
   image *= scale
   pcTheoryImages.append(image)
   image,_ = plc.importImage(
-      "../../results/sim-nitrosobenzene_pairCorrFinalState_scaled["
-        + str(params.NpairCorrBins) + "].dat")
+      "../../results/sim-nitrosobenzene_pairCorrFinalState_scaled-"
+        + run + "[" + str(params.NpairCorrBins) + "].dat")
   image *= scale
   pcTheoryImages.append(image)
+  image,_ = plc.importImage(
+      "../../results/sim-hotGroundState_pairCorrFinalState_scaled-"
+        + run + "[" + str(params.NpairCorrBins) + "].dat")
+  image *= scale
+  pcTheoryImages.append(image)
+  pcTheoryImages_bestFits.append(image)
+  image,_ = plc.importImage(
+      "../../results/sim-hotTripletState_pairCorrFinalState_scaled-"
+        + run + "[" + str(params.NpairCorrBins) + "].dat")
+  image *= scale
+  pcTheoryImages.append(image)
+  pcTheoryImages_bestFits.append(image)
+
+
 
 
   #pcTheoryImages are not scaled to data by fit
-  plotImages = np.vstack((dataImage, pcTheoryImages, bondCoeffs/250.))
+  plotImages = np.vstack((dataImage, pcTheoryImages))
+  #plotImages = np.vstack((dataImage, pcTheoryImages, bondCoeffs/250.))
+  plotImages_bestFits = np.vstack((dataImage, pcTheoryImages_bestFits))
 
-  opts["ySlice"] = [-1.1, 1]
+  opts["ySlice"] = [-1.2, 1.1]
+  opts["legOpts"] = { "loc" : 4}
   plc.print1d(plotImages, 
       "../data-" + run + "_pairCorr_compareFinalStates",
       xRange=params.Rrange,
       isFile=False,
       options=opts)
 
+  opts["labels"] = ["Data", "hot S0", "hot T1"]
+  plc.print1d(plotImages_bestFits, 
+      "../data-" + run + "_pairCorr_compareFinalStates_bestFits",
+      xRange=params.Rrange,
+      isFile=False,
+      options=opts)
+
+  Raxis = np.linspace(0, 1., params.NpairCorrBins)*params.Rrange[1]
+  np.savetxt("Raxis.txt", Raxis, delimiter=" ")
+  np.savetxt("pcFinalStateData_{}.txt".format(run), dataImage, delimiter=" ")
 
   #####  Diffraction  #####
   opts = {
-    "labels"  : ["Data", "Phenoxy + NO", "Phenyl + NO2", "Nitrosobenzene"],
+    "labels"  : ["Data"] + simLabels,
     "xTitle"  : r"Q [$\AA^{-1}$]",
     "xRebin"   : 5,
     #"legOpts"      : {"fontsize" : 15},
@@ -197,15 +250,32 @@ for i,run in enumerate(runs):
   #opts["ySlice"] = [-0.7, 0.6]
   files = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
           + run + "_sMsFinalStateFittedTo[" + str(params.NradAzmBins) + "].dat",
-        "../../results/sim-phenoxyRadical_sMsFinalState_scaled["
-          + str(params.NradAzmBins) + "].dat",
-        "../../results/sim-phenylRadical_sMsFinalState_scaled["
-          + str(params.NradAzmBins) + "].dat", 
-        "../../results/sim-nitrosobenzene_sMsFinalState_scaled["
-          + str(params.NradAzmBins) + "].dat"] 
+        "../../results/sim-phenoxyRadical_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat",
+        "../../results/sim-phenylRadical_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat", 
+        "../../results/sim-nitrosobenzene_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat", 
+        "../../results/sim-hotGroundState_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat",
+        "../../results/sim-hotTripletState_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat"] 
+  files_bestFits = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
+          + run + "_sMsFinalStateFittedTo[" + str(params.NradAzmBins) + "].dat",
+        "../../results/sim-hotGroundState_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat",
+        "../../results/sim-hotTripletState_sMsFinalState_scaled-"
+          + run + "[" + str(params.NradAzmBins) + "].dat"] 
+
   errFiles = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
           + run + "_sMsFinalStateSEMFittedTo[" + str(params.NradAzmBins) + "].dat",
           None,
+          None,
+          None,
+          None,
+          None]
+  errFiles_bestFits = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
+          + run + "_sMsFinalStateSEMFittedTo[" + str(params.NradAzmBins) + "].dat",
           None,
           None]
 
@@ -214,6 +284,44 @@ for i,run in enumerate(runs):
       errors=errFiles,
       xRange=params.QrangeAzm,
       options=opts)
+
+  files = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
+        + run + "_sMsFinalStateFittedTo[" + str(params.NradAzmBins) + "].dat",
+      "../../results/sim-" + run + "_sMsFinalState_scaledLinComb_Bins["\
+        + str(params.NradAzmBins) + "].dat"]
+  files += glob.glob("../../results/sim-" + run\
+      + "_sMsFinalState_scaledLinComb_contribution*")
+  errFiles = ["/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-"\
+          + run + "_sMsFinalStateSEMFittedTo[" + str(params.NradAzmBins) + "].dat"]
+  for i in range(len(files) - 1):
+    errFiles += [None]
+  print(files)  
+  plc.print1d(files, 
+      "../data-" + run + "_sMsAzmAvgDiff_compareFinalStates_linCombFits",
+      errors=errFiles,
+      xRange=params.QrangeAzm,
+      options=opts)
+
+
+  sys.exit(0)
+
+
+
+  opts["labels"] = ["Data", "hot S0", "hot T1"]
+  plc.print1d(files_bestFits, 
+      "../data-" + run + "_sMsAzmAvgDiff_compareFinalStates_bestFits",
+      errors=errFiles_bestFits,
+      xRange=params.QrangeAzm,
+      options=opts)
+
+ 
+  smsData = np.fromfile(files[0], dtype=np.double)
+  smsErr  = np.fromfile(errFiles[0], dtype=np.double)
+  Qaxis = np.linspace(0, 1., params.NradAzmBins)*params.QrangeAzm[1]
+  np.savetxt("Qaxis.txt", Qaxis, delimiter=" ")
+  np.savetxt("smsFinalStateData_{}.txt".format(run), smsData, delimiter=" ")
+  np.savetxt("smsFinalStateSEM_{}.txt".format(run), smsErr, delimiter=" ")
+ 
 
   continue 
   # Time Dependend Fit

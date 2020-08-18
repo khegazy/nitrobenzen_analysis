@@ -17,6 +17,7 @@ plotTsmeared = False
 #runs = ["20180629_1630", "20180627_1551", "20180630_1925", "20180701_0746"]
 #runs = ["20180627_1551", "20180629_1630", "20180630_1925", "20180701_0746"]
 runs = ["20180627_1551"]
+runs = ["20180629_1630"]
 maxX = [2, 1.1, 1.1, 1.1]
 smear = "0.025000"
 mergeFolder = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/"
@@ -34,19 +35,21 @@ selectTimes = [ [0.1, 2.1, 3, 6.5, 12],#[0, 0.5, 1, 4, 8],
 colRange = [-3e-3, 3e-3]
 simLabels = ["phenoxyRadical", "phenylRadical"]
 dfrScale = np.array(
-            [[18, 1.25, 5, 3],
-            [4, 1.25, 5.5, 100]])
+            [[18, 1.25, 1, 5, 3],
+            [4, 1.25, 1, 5.5, 100]])
 pCorrScale = np.array(
               [[200, 1.25, 10],
               [3, 2, 20]])
 titles = []
 for i,run in enumerate(runs):
+  if run == "20180629_1630":
+    i += 1
 
   allLOs = []
-  timeDelay = np.fromfile("../../../mergeScans/results/timeDelays["
-        + str(params.timeSteps[i] + 1) + "].dat", np.double)
+  timeDelay = np.fromfile("../../../mergeScans/results/timeDelays-"
+    + run + "_bins[" + str(params.timeSteps[i] + 1) + "].dat", np.double)
 
-  dfrctnRanges = [[1, 2], [2, 3], [4, 5.5], [6, 7]]
+  dfrctnRanges = [[1, 2], [2, 3], [3,4], [4, 5.5], [6, 7]]
   dfrctnLOs, dfrctnErrLOs = plc.getRangeLineOut(mergeFolder + "data-" 
           + run + "-azmAvgDiff["
           + str(params.timeSteps[i]) 
@@ -75,9 +78,13 @@ for i,run in enumerate(runs):
         pCorrRanges,
         np.linspace(0, 1, params.NpairCorrBins)*params.Rrange[-1],
         errorFileName = mergeFolder + "data-"
-            + run + "-pairCorrSEM["
-            + str(params.timeSteps[i]) + ","
+            + "20180627_1551-pairCorrSEM["
+            #+ run + "-pairCorrSEM["
+            + str(params.timeSteps[0]) + ","
+            #+ str(params.timeSteps[i]) + ","
             + str(params.NpairCorrBins) + "].dat")
+  for k in range(len(pCorrErrLOs)):
+    pCorrErrLOs[k] = pCorrErrLOs[k][:params.timeSteps[i]]
 
   allLOs = allLOs + pCorrLOs
   """
@@ -178,11 +185,12 @@ for i,run in enumerate(runs):
       curMin = min(np.amin(dfr), simMin)
       curMax = max(np.amax(dfr), simMax)
       axs[i].set_xlim([curMin, curMax])
+      axs[i].set_xlim([np.amin(dfr), np.amax(dfr)])
       axs[i].errorbar(dfr, curTimeDelay, xerr=dfrErrLO,\
           color='k', linestyle='-')
-      for j,sdfr in enumerate(simFits):
-        axs[i].errorbar(sdfr, curTimeDelay, xerr=simFitErrs[j],\
-          color='b', linestyle='-')
+      #for j,sdfr in enumerate(simFits):
+      #  axs[i].errorbar(sdfr, curTimeDelay, xerr=simFitErrs[j],\
+      #    color='b', linestyle='-')
 
     axShift = len(dfrctnLOs)
     for i,dfr in enumerate(pCorrLOs):
@@ -213,12 +221,13 @@ for i,run in enumerate(runs):
       curMin = min(np.amin(fdfr), simMin)
       curMax = max(np.amax(fdfr), simMax)
       axs[i+axShift].set_xlim([curMin, curMax])
+      axs[i+axShift].set_xlim([np.amin(fdfr), np.amax(fdfr)])
       axs[i+axShift].xaxis.set_major_locator(MaxNLocator(3))
       axs[i+axShift].errorbar(fdfr, curTimeDelay, xerr=pCorrErrLO,\
           color='k', linestyle='-')
-      for j,sdfr in enumerate(simFits):
-        axs[i+axShift].errorbar(sdfr, curTimeDelay, xerr=simFitErrs[j],\
-          color='b', linestyle='-')
+      #for j,sdfr in enumerate(simFits):
+      #  axs[i+axShift].errorbar(sdfr, curTimeDelay, xerr=simFitErrs[j],\
+      #    color='b', linestyle='-')
 
 
     ###  Plot Images  ###

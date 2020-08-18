@@ -14,12 +14,14 @@ plc = plotCLASS()
 plotTsmeared = False
 #runs = ["20180627_1551", "20180629_1630", "20180630_1925", "20180701_0746"]
 runs = ["20180627_1551", "20180629_1630"]
-maxX = [1.1, 1.5, 1.1, 1.1]
+maxX = [1.1, 1.2, 1.1, 1.1]
 #maxX = [2, 1.1, 1.1, 1.1]
-minX = [0, 0, -0.2, -0.2]
+minX = [0, -0.3, -0.2, -0.2]
 #minX = [0, -0.3, -0.2, -0.2]
 smear = "0.025000"
 mergeFolder = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/"
+wiggles = [0.2, 1.1]
+
 
 selectTimes = [ [0.1, 2.1, 3, 6.5, 12],#[0, 0.5, 1, 4, 8],
                 [0, 0.25, 0.5, 0.75, 1],
@@ -30,6 +32,7 @@ selectTimes = [ [0.1, 2.1, 3, 6.5, 12],#[0, 0.5, 1, 4, 8],
 #####  Plotting time dependent diffraction  #####
 #################################################
 colRange = [[-4e-4, 4e-4], [-4e-4, 4e-4], [-3e-3, 3e-3], [-3e-3, 3e-3]]
+sMsColRange = [[-15e-1, 15e-1], [-15e-1, 15e-1], [-3e-2, 3e-2], [-3e-2, 3e-2]]
 #colRange = [[-3e-3, 3e-3], [-3e-3, 3e-3], [-3e-3, 3e-3], [-3e-3, 3e-3]]
 #colRange = [[-7e-3, 7e-3], [-7e-3, 7e-3], [-7e-3, 7e-3], [-7e-3, 7e-3]]
 #colRange = [-3e-3, 3e-3]
@@ -40,8 +43,9 @@ for i,run in enumerate(runs):
     #"colorTextSize" : 15,
     "xTitle"      : "Time [ps]",
     "yTitle"      : r"Q [$\AA^{-1}$]",
-    "yRebin"      : 8,
+    "yRebin"      : 5,
     "yTicks"      : np.arange(int(params.QrangeAzm[-1]) + 1),
+    "ySlice"      : [0, 10],
     #"xTitleSize"  : 18,
     #"yTitleSize"  : 18,
     #"xTickSize"   : 15,
@@ -51,8 +55,11 @@ for i,run in enumerate(runs):
 
   timeDelay = np.fromfile("../../../mergeScans/results/timeDelays-"
         + run + "_bins[" + str(params.timeSteps[i] + 1) + "].dat", np.double)
- 
 
+  print(run)
+  print(timeDelay)
+
+  opts["colorRange"] = colRange[i]
   plc.print2d(mergeFolder + "data-" 
           + run + "-azmAvgDiff["
           + str(params.timeSteps[i]) 
@@ -61,6 +68,18 @@ for i,run in enumerate(runs):
         X=timeDelay,
         yRange=params.QrangeAzm,
         options=opts)
+
+  opts["colorRange"] = sMsColRange[i]*5
+  plc.print2d(mergeFolder + "data-" 
+          + run + "-sMsAzmAvgDiff["
+          + str(params.timeSteps[i]) 
+          + "," + str(params.NradAzmBins) + "].dat",
+        "../data-" + run + "-sMsAzmAvgDiffFull",
+        X=timeDelay,
+        yRange=params.QrangeAzm,
+        #scale=np.reshape(1./(np.linspace(1e-8, 1, params.NradAzmBins)/params.QrangeAzm[1]), (1, -1)),
+        options=opts)
+
 
   """
   plc.print2d("../../results/data-" 
@@ -102,6 +121,7 @@ for i,run in enumerate(runs):
           options=opts)
 
   opts["xSlice"] = [minX[i], maxX[i]]
+  opts["colorRange"] = colRange[i]
   plc.print2d(mergeFolder + "data-"
           + run + "-azmAvgDiff["
           + str(params.timeSteps[i]) 
@@ -109,6 +129,18 @@ for i,run in enumerate(runs):
         "../data-" + run + "-azmAvgDiff",
         X=timeDelay,
         yRange=params.QrangeAzm,
+        options=opts)
+
+
+  opts["colorRange"] = sMsColRange[i]
+  plc.print2d(mergeFolder + "data-"
+          + run + "-sMsAzmAvgDiff["
+          + str(params.timeSteps[i]) 
+          + "," + str(params.NradAzmBins) + "].dat",
+        "../data-" + run + "-sMsAzmAvgDiff",
+        X=timeDelay,
+        yRange=params.QrangeAzm,
+        #scale=np.reshape(1./(np.linspace(1e-8, 1, params.NradAzmBins)/params.QrangeAzm[1]), (1, -1)),
         options=opts)
 
 
@@ -164,6 +196,17 @@ for i,run in enumerate(runs):
           xRange=[timeDelay[0], timeDelay[-1]],
           yRange=params.QrangeAzm,
           options=opts)
+
+  opts["xSlice"] = wiggles
+  plc.print2d(mergeFolder + "data-"
+          + run + "-azmAvgDiff["
+          + str(params.timeSteps[i]) 
+          + "," + str(params.NradAzmBins) + "].dat",
+        "../data-" + run + "-azmAvgDiff_wiggles",
+        X=timeDelay,
+        yRange=params.QrangeAzm,
+        options=opts)
+
 
 
 td27, _ = plc.importImage(
@@ -331,6 +374,19 @@ for i,run in enumerate(runs):
       isFile=False,
       options=opts)
 
+
+  del opts["text"]
+  opts["xSlice"] = wiggles
+  opts["line"] = [[opts["xSlice"], [1.8, 1.8], "k", 1]]
+  plc.print2d("../../results/data-" + run + "_pairCorrOdd["
+          + str(params.timeSteps[i]) + "," 
+          + str(params.NpairCorrBins) + "].dat",
+        "../data-" + run + "_pairCorr_wiggles",
+        X=timeDelay,
+        yRange=params.Rrange,
+        options=opts)
+
+
   del opts["yTitle"]
   del opts["xSlice"]
   opts["text"] = [8, 8, "Final State: " + str(finState)]
@@ -343,13 +399,15 @@ for i,run in enumerate(runs):
 
 
 
-########################################
-#####  Plotting Phynel Simulation  #####
-########################################
+###########################################################
+#####  Plotting Phynel and Nitrosobenzene Simulation  #####
+###########################################################
 
 
 NdissTimeSteps = "400"
 NrotTimeSteps = "800"
+Nrot90TimeSteps = "80"
+NflopTimeSteps = "200"
 xZoomFine = [0, 1]
 xZoomMed = [0, 2]
 timeDepSimDir = "/reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/"
@@ -360,6 +418,13 @@ dissTimeDelay = np.fromfile(
 rotTimeDelay = np.fromfile(
       timeDepSimDir + "rotation_nitrobenzene_timeDelays["
       + NrotTimeSteps + "].dat", np.double)
+rot90TimeDelay = np.fromfile(
+      timeDepSimDir + "rotate90_nitrobenzene_timeDelays["
+      + Nrot90TimeSteps + "].dat", np.double)
+NOflopTimeDelay = np.fromfile(
+      timeDepSimDir + "NOflop_nitrobenzene_timeDelays["
+      + NflopTimeSteps + "].dat", np.double)
+
 opts = {
   "colorRange" : [-3e-1, 3e-1],
   "colorMap"   : 'seismic',
@@ -370,57 +435,103 @@ opts = {
 
 opts["xSlice"] = xZoomFine
 plc.print2d("../../results/"
-        "sim-nitrobenzene-dissociation-phenyl-N2O_pairCorrOdd["
+        "sim-nitrobenzene-dissociation_phenyl-N2O_pairCorrOdd["
         +NdissTimeSteps+",369].dat",
-      "../sim-nitrobenzene-dissociation-phenyl-N2O_pairCorr",
+      "../sim-nitrobenzene-dissociation_phenyl-N2O_pairCorr",
       X=dissTimeDelay,
       yRange=params.Rrange,
       options=opts)
  
 plc.print2d("../../results/"
-        "sim-nitrobenzene-dissociation-phenyl-N2O_timeSmoothed_pairCorrOdd["
+        "sim-nitrobenzene-dissociation_phenyl-N2O_timeSmoothed_pairCorrOdd["
         +NdissTimeSteps+",369].dat",
-      "../sim-nitrobenzene-dissociation-phenyl-N2O_timeSmoothed_pairCorr",
+      "../sim-nitrobenzene-dissociation_phenyl-N2O_timeSmoothed_pairCorr",
       X=dissTimeDelay,
       yRange=params.Rrange,
       options=opts)
+
+plc.print2d("../../results/"
+        "sim-nitrobenzene-dissociation_nitrosobenzene-O_pairCorrOdd["
+        +NdissTimeSteps+",369].dat",
+      "../sim-nitrobenzene-dissociation_nitrosobenzene-O_pairCorr",
+      X=dissTimeDelay,
+      yRange=params.Rrange,
+      options=opts)
+ 
+plc.print2d("../../results/"
+        "sim-nitrobenzene-dissociation_nitrosobenzene-O_timeSmoothed_pairCorrOdd["
+        +NdissTimeSteps+",369].dat",
+      "../sim-nitrobenzene-dissociation_nitrosobenzene-O_timeSmoothed_pairCorr",
+      X=dissTimeDelay,
+      yRange=params.Rrange,
+      options=opts)
+
 
 opts["xSlice"] = xZoomMed
 plc.print2d("../../results/"
-        "sim-nitrobenzene-dissociation-phenyl-N2O_pairCorrOdd["
+        "sim-nitrobenzene-dissociation_phenyl-N2O_pairCorrOdd["
         +NdissTimeSteps+",369].dat",
-      "../sim-nitrobenzene-dissociation-phenyl-N2O_pairCorrFull",
+      "../sim-nitrobenzene-dissociation_phenyl-N2O_pairCorrFull",
       X=dissTimeDelay,
       yRange=params.Rrange,
       options=opts)
 
 plc.print2d("../../results/"
-        "sim-nitrobenzene-dissociation-phenyl-N2O_timeSmoothed_pairCorrOdd["
+        "sim-nitrobenzene-dissociation_phenyl-N2O_timeSmoothed_pairCorrOdd["
         +NdissTimeSteps+",369].dat",
-      "../sim-nitrobenzene-dissociation-phenyl-N2O_timeSmoothed_pairCorrFull",
+      "../sim-nitrobenzene-dissociation_phenyl-N2O_timeSmoothed_pairCorrFull",
       X=dissTimeDelay,
       yRange=params.Rrange,
       options=opts)
 
-"""
-opts["xSlice"] = xZoomFine
 plc.print2d("../../results/"
-        "sim-nitrobenzene-rotation-nitrobenzene_pairCorrOdd["
-        +NrotTimeSteps+",369].dat",
-      "../sim-nitrobenzene-rotation_pairCorr",
-      X=rotTimeDelay,
+        "sim-nitrobenzene-dissociation_nitrosobenzene-O_pairCorrOdd["
+        +NdissTimeSteps+",369].dat",
+      "../sim-nitrobenzene-dissociation_nitrosobenzene-O_pairCorrFull",
+      X=dissTimeDelay,
       yRange=params.Rrange,
       options=opts)
 
-opts["xSlice"] = xZoomMed
 plc.print2d("../../results/"
-        "sim-nitrobenzene-rotation-nitrobenzene_pairCorrOdd["
-        +NrotTimeSteps+",369].dat",
-      "../sim-nitrobenzene-rotation_pairCorrFull",
-      X=rotTimeDelay,
+        "sim-nitrobenzene-dissociation_nitrosobenzene-O_timeSmoothed_pairCorrOdd["
+        +NdissTimeSteps+",369].dat",
+      "../sim-nitrobenzene-dissociation_nitrosobenzene-O_timeSmoothed_pairCorrFull",
+      X=dissTimeDelay,
       yRange=params.Rrange,
       options=opts)
-"""
+
+plc.print2d("../../results/"
+        "sim-nitrobenzene-NOflop_pairCorrOdd["
+        +NflopTimeSteps+",369].dat",
+      "../sim-nitrobenzene-NOflop_pairCorrFull",
+      X=NOflopTimeDelay,
+      yRange=params.Rrange,
+      options=opts)
+
+plc.print2d("../../results/"
+        "sim-nitrobenzene-NOflop_timeSmoothed_pairCorrOdd["
+        +NflopTimeSteps+",369].dat",
+      "../sim-nitrobenzene-NOflop_timeSmoothed_pairCorrFull",
+      X=NOflopTimeDelay,
+      yRange=params.Rrange,
+      options=opts)
+
+
+opts["xSlice"] = [rot90TimeDelay[0], rot90TimeDelay[-1]]
+plc.print2d("../../results/"
+        "sim-nitrobenzene-rotate90_pairCorrOdd["
+        +Nrot90TimeSteps+",369].dat",
+      "../sim-rotate90_nitrobenzene_pairCorr",
+      X=rot90TimeDelay,
+      yRange=params.Rrange,
+      options=opts)
+plc.print2d("../../results/"
+        "sim-nitrobenzene-rotate90_timeSmoothed_pairCorrOdd["
+        +Nrot90TimeSteps+",369].dat",
+      "../sim-rotate90_nitrobenzene_timeSmoothed_pairCorr",
+      X=rot90TimeDelay,
+      yRange=params.Rrange,
+      options=opts)
 
 
 diffColorRange = [-2e-2, 2e-2]
@@ -440,7 +551,7 @@ plc.print2d(timeDepSimDir
         + "dissociation_phenyl-N2O_azmAvgSMS_Qmax-12.376500_Ieb-5.000000"
         + "_scrnD-4.000000_elE-3700000.000000_Bins["
         + NdissTimeSteps + ",555].dat",
-      "../sim-dissociation-phenyl-N2O-azmAvgSMS",
+      "../sim-dissociation_phenyl-N2O-azmAvgSMS",
       X=dissTimeDelay,
       yRange=params.QrangeAzm,
       options=opts)
@@ -449,10 +560,29 @@ plc.print2d(timeDepSimDir
         + "dissociation_phenyl-N2O_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000"
         + "_scrnD-4.000000_elE-3700000.000000_Bins["
         + NdissTimeSteps + ",555].dat",
-      "../sim-dissociation-phenyl-N2O-azmAvgSMS_timeSmoothed",
+      "../sim-dissociation_phenyl-N2O-azmAvgSMS_timeSmoothed",
       X=dissTimeDelay,
       yRange=params.QrangeAzm,
       options=opts)
+
+plc.print2d(timeDepSimDir
+        + "dissociation_nitrosobenzene-O_azmAvgSMS_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + NdissTimeSteps + ",555].dat",
+      "../sim-dissociation_nitrosobenzene-O_azmAvgSMS",
+      X=dissTimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+
+plc.print2d(timeDepSimDir
+        + "dissociation_nitrosobenzene-O_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + NdissTimeSteps + ",555].dat",
+      "../sim-dissociation_nitrosobenzene-O_azmAvgSMS_timeSmoothed",
+      X=dissTimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+
 
 opts["xSlice"] = xZoomFine
 opts["colorRange"] = diffColorRange
@@ -460,7 +590,7 @@ plc.print2d(timeDepSimDir
         + "dissociation_phenyl-N2O_azmAvg_Qmax-12.376500_Ieb-5.000000"
         + "_scrnD-4.000000_elE-3700000.000000_Bins["
         + NdissTimeSteps + ",555].dat",
-      "../sim-dissociation-phenyl-N2O-azmAvg",
+      "../sim-dissociation_phenyl-N2O_azmAvg",
       X=dissTimeDelay,
       yRange=params.QrangeAzm,
       options=opts)
@@ -469,14 +599,72 @@ plc.print2d(timeDepSimDir
         + "dissociation_phenyl-N2O_azmAvg_timeSmoothed_Qmax-12.376500_Ieb-5.000000"
         + "_scrnD-4.000000_elE-3700000.000000_Bins["
         + NdissTimeSteps + ",555].dat",
-      "../sim-dissociation-phenyl-N2O-azmAvg_timeSmoothed",
+      "../sim-dissociation_phenyl-N2O_azmAvg_timeSmoothed",
       X=dissTimeDelay,
       yRange=params.QrangeAzm,
       options=opts)
 
-"""
-opts["xSlice"] = xZoomFine
+plc.print2d(timeDepSimDir
+        + "dissociation_nitrosobenzene-O_azmAvg_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + NdissTimeSteps + ",555].dat",
+      "../sim-dissociation_nitrosobenzene-O_azmAvg",
+      X=dissTimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+
+plc.print2d(timeDepSimDir
+        + "dissociation_nitrosobenzene-O_azmAvg_timeSmoothed_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + NdissTimeSteps + ",555].dat",
+      "../sim-dissociation_nitrosobenzene-O_azmAvg_timeSmoothed",
+      X=dissTimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+
+
+opts["xSlice"] = [rot90TimeDelay[0], rot90TimeDelay[-1]]
+opts["colorRange"] = diffColorRange
+plc.print2d(timeDepSimDir
+        + "rotate90_nitrobenzene_azmAvg_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + Nrot90TimeSteps + ",555].dat",
+      "../sim-rotate90_nitrobenzene_azmAvg",
+      X=rot90TimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+plc.print2d(timeDepSimDir
+        + "rotate90_nitrobenzene_azmAvg_timeSmoothed_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + Nrot90TimeSteps + ",555].dat",
+      "../sim-rotate90_nitrobenzene_azmAvg_timeSmoothed",
+      X=rot90TimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+
+
+opts["xSlice"] = [rot90TimeDelay[0], rot90TimeDelay[-1]]
 opts["colorRange"] = smsColorRange
+plc.print2d(timeDepSimDir
+        + "rotate90_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + Nrot90TimeSteps + ",555].dat",
+      "../sim-rotate90_nitrobenzene_azmAvgSMSFull",
+      X=rot90TimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+plc.print2d(timeDepSimDir
+        + "rotate90_nitrobenzene_azmAvgSMS_timeSmoothed_Qmax-12.376500_Ieb-5.000000"
+        + "_scrnD-4.000000_elE-3700000.000000_Bins["
+        + Nrot90TimeSteps + ",555].dat",
+      "../sim-rotate90_nitrobenzene_azmAvgSMSFull_timeSmoothed",
+      X=rot90TimeDelay,
+      yRange=params.QrangeAzm,
+      options=opts)
+
+
+opts["xSlice"] = xZoomFine
+opts["colorRange"] = diffColorRange
 plc.print2d(timeDepSimDir
         + "rotation_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000"
         + "_scrnD-4.000000_elE-3700000.000000_Bins["
@@ -487,7 +675,7 @@ plc.print2d(timeDepSimDir
       options=opts)
 
 opts["xSlice"] = xZoomMed
-opts["colorRange"] = smsColorRange
+opts["colorRange"] = diffColorRange
 plc.print2d(timeDepSimDir
         + "rotation_nitrobenzene_azmAvgSMS_Qmax-12.376500_Ieb-5.000000"
         + "_scrnD-4.000000_elE-3700000.000000_Bins["
@@ -496,29 +684,6 @@ plc.print2d(timeDepSimDir
       X=rotTimeDelay,
       yRange=params.QrangeAzm,
       options=opts)
-
-opts["xSlice"] = xZoomFine
-opts["colorRange"] = diffColorRange
-plc.print2d(timeDepSimDir
-        + "rotation_nitrobenzene_azmAvg_Qmax-12.376500_Ieb-5.000000"
-        + "_scrnD-4.000000_elE-3700000.000000_Bins["
-        + NrotTimeSteps + ",555].dat",
-      "../sim-rotation-nitrobenzene-azmAvg",
-      X=rotTimeDelay,
-      yRange=params.QrangeAzm,
-      options=opts)
-
-opts["xSlice"] = xZoomMed
-opts["colorRange"] = diffColorRange
-plc.print2d(timeDepSimDir
-        + "rotation_nitrobenzene_azmAvg_Qmax-12.376500_Ieb-5.000000"
-        + "_scrnD-4.000000_elE-3700000.000000_Bins["
-        + NrotTimeSteps + ",555].dat",
-      "../sim-rotation-nitrobenzene-azmAvgFull",
-      X=rotTimeDelay,
-      yRange=params.QrangeAzm,
-      options=opts)
-"""
 
 
 """
@@ -602,8 +767,8 @@ for i,run in enumerate(runs):
       options=opts1d)
 """
 
-print("exiting before plotting td fits")
-sys.exit(0)
+#print("exiting before plotting td fits")
+#sys.exit(0)
 ##################################################
 #####  Plotting Final State Fits to TD Data  #####
 ##################################################
@@ -612,7 +777,7 @@ colRange = [-3e-3, 3e-3]
 for i,run in enumerate(runs):
   opts = {
     "xTitle"     : "Time [ps]",
-    "labels"     : ["phenoxyRadical", "phenylRadical"]
+    "labels"     : ["C6H5O + NO", "C6H5 + NO2", "C5H5NO + O", "hot S0"]
     }
 
   timeDelay = np.fromfile("../../../mergeScans/results/timeDelays-" 
@@ -623,21 +788,42 @@ for i,run in enumerate(runs):
   files = [resFolder + "sim-" + run\
               + "-offset_sMsFitCoeffsLinComb_Bins["\
               + str(params.timeSteps[i]) + "].dat","""
-  files = [resFolder + "sim-" + run\
+  files = [
+          resFolder + "sim-" + run\
               + "-phenoxyRadical_sMsFitCoeffsLinComb_Bins["\
               + str(params.timeSteps[i]) + "].dat",
           resFolder + "sim-" + run\
               + "-phenylRadical_sMsFitCoeffsLinComb_Bins["\
+              + str(params.timeSteps[i]) + "].dat",
+          resFolder + "sim-" + run\
+              + "-nitrosobenzene_sMsFitCoeffsLinComb_Bins["\
+              + str(params.timeSteps[i]) + "].dat",
+          resFolder + "sim-" + run\
+              + "-hotGroundState_sMsFitCoeffsLinComb_Bins["\
+              + str(params.timeSteps[i]) + "].dat",
+          resFolder + "sim-" + run\
+              + "-hotTripletState_sMsFitCoeffsLinComb_Bins["\
               + str(params.timeSteps[i]) + "].dat"]
+
   """
   errFiles = [resFolder + "sim-" + run\
               + "-offset_sMsFitCoeffErrorsLinComb_Bins["\
               + str(params.timeSteps[i]) + "].dat","""
-  errFiles = [resFolder + "sim-" + run\
+  errFiles = [
+          resFolder + "sim-" + run\
               + "-phenoxyRadical_sMsFitCoeffErrorsLinComb_Bins["\
               + str(params.timeSteps[i]) + "].dat",
           resFolder + "sim-" + run\
               + "-phenylRadical_sMsFitCoeffErrorsLinComb_Bins["\
+              + str(params.timeSteps[i]) + "].dat",
+          resFolder + "sim-" + run\
+              + "-nitrosobenzene_sMsFitCoeffErrorsLinComb_Bins["\
+              + str(params.timeSteps[i]) + "].dat",
+          resFolder + "sim-" + run\
+              + "-hotGroundState_sMsFitCoeffErrorsLinComb_Bins["\
+              + str(params.timeSteps[i]) + "].dat",
+          resFolder + "sim-" + run\
+              + "-hotTripletState_sMsFitCoeffErrorsLinComb_Bins["\
               + str(params.timeSteps[i]) + "].dat"]
 
   plc.print1d(files,

@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 sys.path.append('../../../plots/scripts')
+sys.path.append('/reg/neh/home/khegazy/baseTools/UEDanalysis/plots/scripts')
 from plotClass import plotCLASS
 from plotParams import pltParams
 import matplotlib.pyplot as plt
@@ -27,20 +28,17 @@ optsCorr = {
     #"smooth"  : 7 
     }
 
-"""
-optsDiff["labels"] = []
-optsCorr["labels"] = []
-for iq in qBins:
-  optsDiff["labels"].append(str(iq*0.0223) + r" $\AA^{-1}$")
-  optsCorr["labels"].append(str(iq*0.0223) + r" $\AA^{-1}$")
-  """
-shift = 5
-start = 60 + shift
-end = 70 + shift
+
+startQ = 1.25 
+endQ = 2
+
+start = startQ*555/12.3
+end   = endQ*555/12.3
+
 for i,run in enumerate(runs):
 
   print("run", run)
-  times = np.fromfile("../../../mergeScans/results/timeDelays["
+  times = np.fromfile("../../../mergeScans/results/timeDelays-" + run + "_bins["
       + str(timeSteps[i] + 1) + "].dat", np.double)
   times = times[:-1]
 
@@ -55,6 +53,6 @@ for i,run in enumerate(runs):
 
   print(np.mean(image[:17,start:end]))
 
-plt.savefig("comparingTime.png")
+  plt.savefig("../temporalLO_" +run+ "_"+str(startQ) + "_" + str(endQ) + ".png")
 
 
