@@ -66,7 +66,7 @@ def writeXYZfile(atoms, folder, fileName):
 #####  Simulation Classes  #####
 ################################
 
-class dissociation:
+class dissociation_NO2:
 
   def __init__(self, atoms):
     self.startTime = 0. #ps
@@ -78,6 +78,7 @@ class dissociation:
     self.velocityScale = (self.momentum/self.m_N2O)*1e10*1e-12    #Angs/ps
     #self.velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-12   #Angs/ps
     print("dissocition (angs/ps): ", self.velocityScale)
+    self.atoms = copy.deepcopy(atoms)
 
     ###  Find carbon closest to N  ###
     closestC = ''
@@ -105,6 +106,33 @@ class dissociation:
     return atoms
 
 
+class dissociation_O:
+
+  def __init__(self, atoms):
+    self.startTime = 0. #ps
+    self.endTime = 1. #ps
+    self.m_O = (8)*1.7e-27      #kg
+    self.m_nitrosobenzene = (5 + 6*6 + 8 + 7)*1.7e-27   #kg
+    self.momentum = 0.15*np.sqrt(4.8e-19*2*self.m_O*self.m_nitrosobenzene\
+        /(self.m_O + self.m_nitrosobenzene))
+    #self.momentum = np.sqrt(4.8e-19*2*self.m_N2O*self.m_phenyl/(self.m_N2O + self.m_phenyl))
+    self.velocityScale = (self.momentum/self.m_O)*1e10*1e-12    #Angs/ps
+    #self.velocityScale = np.sqrt(4.8e-19/(0.5*23*1.7e-27))*1e10*1e-12   #Angs/ps
+    print("dissocition (angs/ps): ", self.velocityScale)
+    self.atoms = copy.deepcopy(atoms)
+
+    ###  Calculate velocity  ###
+    self.velocity = atoms['O0'].position - atoms['N0'].position
+    self.velocity *= self.velocityScale/np.linalg.norm(self.velocity)
+
+
+  def update(self, atoms, atomsOrig, time):
+    atoms['O0'].position = atomsOrig['O0'].position + time*self.velocity
+    print("testDist innUp: ",np.linalg.norm(atomsOrig["O0"].position-atomsOrig["C0"].position))
+
+    return atoms
+
+
 class rotation:
 
   def __init__(self, atoms):
@@ -115,6 +143,7 @@ class rotation:
     self.rotationFreq   = 2.*np.pi/self.rotationPeriod
     self.deltaTaccStop  = 0.05
     self.rotationAcc    = self.rotationFreq/self.deltaTaccStop
+    self.atoms = copy.deepcopy(atoms)
     self.thetas = []
     self.distO1 = []
     self.distO2 = []
@@ -179,6 +208,7 @@ class rotate90:
     self.endTime        = 0.2 #ps
     self.rotationPeriod = 0.8 #ps
     self.rotationFreq   = 2.*np.pi/self.rotationPeriod
+    self.atoms = copy.deepcopy(atoms)
     self.thetas = []
     self.distO1 = []
     self.distO2 = []
@@ -233,6 +263,7 @@ class bending:
     self.bendPeriod = 0.4 #ps
     self.maxBendAng = 2*np.pi/6 #rad
     self.endTime    = 5.  #ps
+    self.atoms = copy.deepcopy(atoms)
 
     ###  Find carbon closest to N  ###
     self.closestC = ''
@@ -272,6 +303,360 @@ class bending:
     return atoms
 
 
+class NO_flop:
+
+  def __init__(self, atoms):
+    self.startTime      = 0. #ps
+    self.endTime        = 1. #ps
+    self.rotationPeriod = 0.4 #ps
+    self.rotationFreq   = 2.*np.pi/self.rotationPeriod
+    self.rotateAngle    = np.pi/4
+    self.atoms = copy.deepcopy(atoms)
+    self.thetas = []
+
+    ###  Find carbon closest to N  ###
+    self.closestC = ''
+    minDist = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C':
+        continue
+      
+      if np.linalg.norm(val.position - atoms['N0'].position) < minDist:
+        minDist   = np.linalg.norm(val.position - atoms['N0'].position)
+        self.closestC  = key
+
+    self.closestC1, self.closestC2 = '',''
+    minDist1 = 10
+    minDist2 = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C' or key == self.closestC:
+        continue
+      
+      if np.linalg.norm(val.position - atoms[self.closestC].position) < minDist1:
+        minDist2  = minDist1
+        self.closestC2 = self.closestC1
+        minDist1  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC1 = key
+      elif np.linalg.norm(val.position - atoms[self.closestC].position) < minDist2:
+        minDist2  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC2 = key
+
+
+
+
+    ###  Calculate rotation axis  ###
+    self.angMomVec = atoms[self.closestC1].position - atoms[self.closestC2].position
+    self.angMomVec /= np.linalg.norm(self.angMomVec)
+
+    self.W = np.array( [[0, -1*self.angMomVec[2], self.angMomVec[1]],
+                        [self.angMomVec[2], 0, -1*self.angMomVec[0]],
+                        [-1*self.angMomVec[1], self.angMomVec[0], 0]])
+    self.W2 = np.dot(self.W, self.W)
+
+
+  def update(self, atoms, atomsOrig, time):
+
+    theta = self.rotateAngle*np.sin(self.rotationFreq*time)
+
+    self.thetas.append(theta % 2*np.pi)
+    # Rodrigues Rotation Formula
+    rotationMat = np.eye(3) + np.sin(theta)*self.W + (1 - np.cos(theta))*self.W2
+    #print(atomsOrig["O0"].position - atomsOrig["N0"].position)
+    #print(np.dot(rotationMat,atomsOrig["O0"].position - atomsOrig["N0"].position))
+    atoms["N0"].position = atomsOrig[self.closestC].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["N0"].position - atomsOrig[self.closestC].position)
+    atoms["O0"].position = atomsOrig[self.closestC].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["O0"].position - atomsOrig[self.closestC].position)
+    atoms["O1"].position = atomsOrig[self.closestC].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["O1"].position - atomsOrig[self.closestC].position)
+
+    print("angle", theta, time)
+    print("testDist inUp: ",np.linalg.norm(atomsOrig[self.closestC1].position-atomsOrig["N0"].position))
+    print("testDist inUp: ",np.linalg.norm(atoms[self.closestC1].position-atoms["N0"].position))
+    return atoms
+
+
+class C0_flop:
+
+  def __init__(self, atoms):
+    self.startTime      = 0. #ps
+    self.endTime        = 1. #ps
+    self.rotationPeriod = 0.4 #ps
+    self.rotationFreq   = 2.*np.pi/self.rotationPeriod
+    self.rotateAngle    = np.pi/4
+    self.atoms = copy.deepcopy(atoms)
+    self.thetas = []
+
+    ###  Find carbon closest to N  ###
+    self.closestC = ''
+    minDist = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C':
+        continue
+      
+      if np.linalg.norm(val.position - atoms['N0'].position) < minDist:
+        minDist   = np.linalg.norm(val.position - atoms['N0'].position)
+        self.closestC  = key
+
+    self.closestC1, self.closestC2 = '',''
+    minDist1 = 10
+    minDist2 = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C' or key == self.closestC:
+        continue
+      
+      if np.linalg.norm(val.position - atoms[self.closestC].position) < minDist1:
+        minDist2  = minDist1
+        self.closestC2 = self.closestC1
+        minDist1  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC1 = key
+      elif np.linalg.norm(val.position - atoms[self.closestC].position) < minDist2:
+        minDist2  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC2 = key
+
+
+    ###  Calculate rotation axis  ###
+    self.angMomVec = atoms[self.closestC1].position - atoms[self.closestC2].position
+    self.angMomVec /= np.linalg.norm(self.angMomVec)
+
+    self.W = np.array( [[0, -1*self.angMomVec[2], self.angMomVec[1]],
+                        [self.angMomVec[2], 0, -1*self.angMomVec[0]],
+                        [-1*self.angMomVec[1], self.angMomVec[0], 0]])
+    self.W2 = np.dot(self.W, self.W)
+
+
+  def update(self, atoms, atomsOrig, time):
+
+    theta = self.rotateAngle*np.sin(self.rotationFreq*time)
+
+    self.thetas.append(theta % 2*np.pi)
+    # Rodrigues Rotation Formula
+    rotationMat = np.eye(3) + np.sin(theta)*self.W + (1 - np.cos(theta))*self.W2
+    #print(atomsOrig["O0"].position - atomsOrig["N0"].position)
+    #print(np.dot(rotationMat,atomsOrig["O0"].position - atomsOrig["N0"].position))
+    atoms[self.closestC].position = np.dot(rotationMat, atomsOrig[self.closestC].position)
+
+    print("angle", theta, time)
+    print("testDist inUp: ",np.linalg.norm(atomsOrig[self.closestC].position-atomsOrig["N0"].position))
+    print("testDist inUp: ",np.linalg.norm(atoms[self.closestC].position-atoms["N0"].position))
+    return atoms
+
+
+
+class diag_bend:
+
+  def __init__(self, atoms):
+    self.startTime      = 0. #ps
+    self.endTime        = 1. #ps
+    self.rotationPeriod = 0.4 #ps
+    self.rotationFreq   = 2.*np.pi/self.rotationPeriod
+    self.rotateAngle    = np.pi/4
+    self.atoms = copy.deepcopy(atoms)
+    self.thetas = []
+
+    ###  Find carbon closest to N  ###
+    self.closestC = ''
+    minDist = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C':
+        continue
+      
+      if np.linalg.norm(val.position - atoms['N0'].position) < minDist:
+        minDist   = np.linalg.norm(val.position - atoms['N0'].position)
+        self.closestC  = key
+
+    self.closestC1, self.closestC2 = '',''
+    minDist1 = 10
+    minDist2 = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C' or key == self.closestC:
+        continue
+      
+      if np.linalg.norm(val.position - atoms[self.closestC].position) < minDist1:
+        minDist2  = minDist1
+        self.closestC2 = self.closestC1
+        minDist1  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC1 = key
+      elif np.linalg.norm(val.position - atoms[self.closestC].position) < minDist2:
+        minDist2  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC2 = key
+
+    minDist3 = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C' or key == self.closestC or key == self.closestC1 or key == self.closestC2:
+        continue
+
+      if np.linalg.norm(val.position - atoms[self.closestC2].position) < minDist3:
+        minDist3  = np.linalg.norm(val.position - atoms[self.closestC2].position)
+        self.closestC3 = key
+
+
+    ###  Calculate rotation axis  ###
+    self.angMomVec = atoms[self.closestC1].position - atoms[self.closestC3].position
+    self.angMomVec /= np.linalg.norm(self.angMomVec)
+
+    self.W = np.array( [[0, -1*self.angMomVec[2], self.angMomVec[1]],
+                        [self.angMomVec[2], 0, -1*self.angMomVec[0]],
+                        [-1*self.angMomVec[1], self.angMomVec[0], 0]])
+    self.W2 = np.dot(self.W, self.W)
+
+
+  def update(self, atoms, atomsOrig, time):
+
+    theta = self.rotateAngle*np.sin(self.rotationFreq*time)
+
+    self.thetas.append(theta % 2*np.pi)
+    # Rodrigues Rotation Formula
+    rotationMat = np.eye(3) + np.sin(theta)*self.W + (1 - np.cos(theta))*self.W2
+    #print(atomsOrig["O0"].position - atomsOrig["N0"].position)
+    #print(np.dot(rotationMat,atomsOrig["O0"].position - atomsOrig["N0"].position))
+    for key in atoms.keys():
+      if key == self.closestC1 or key == self.closestC3:
+        continue
+
+      atoms[key].position = np.dot(rotationMat, atomsOrig[key].position)
+
+    print("angle", theta, time)
+    print("testDist inUp: ",np.linalg.norm(atomsOrig[self.closestC1].position-atomsOrig["N0"].position))
+    print("testDist inUp: ",np.linalg.norm(atoms[self.closestC1].position-atoms["N0"].position))
+    return atoms
+
+
+class axis_bend:
+
+  def __init__(self, atoms):
+    self.startTime      = 0. #ps
+    self.endTime        = 1. #ps
+    self.rotationPeriod = 0.4 #ps
+    self.rotationFreq   = 2.*np.pi/self.rotationPeriod
+    self.rotateAngle    = np.pi/4
+    self.atoms = copy.deepcopy(atoms)
+    self.thetas = []
+
+    ###  Find carbon closest to N  ###
+    self.closestC = ''
+    minDist = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C':
+        continue
+      
+      if np.linalg.norm(val.position - atoms['N0'].position) < minDist:
+        minDist   = np.linalg.norm(val.position - atoms['N0'].position)
+        self.closestC  = key
+
+    self.closestC1 = ''
+    self.closestC2 = ''
+    minDist1 = 10
+    minDist2 = 10
+    maxDist4 = 0
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C' or key == self.closestC:
+        continue
+      
+      if np.linalg.norm(val.position - atoms[self.closestC].position) < minDist1:
+        minDist2  = minDist1
+        self.closestC2 = self.closestC1
+        minDist1  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC1 = key
+      elif np.linalg.norm(val.position - atoms[self.closestC].position) < minDist2:
+        minDist2  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC2 = key
+
+
+      if np.linalg.norm(val.position - atoms[self.closestC].position) > maxDist4:
+        maxDist4  = np.linalg.norm(val.position - atoms[self.closestC].position)
+        self.closestC4 = key
+
+
+    ###  Calculate rotation axis  ###
+    self.angMomVec = atoms[self.closestC].position - atoms[self.closestC4].position
+    self.angMomVec /= np.linalg.norm(self.angMomVec)
+
+    self.W = np.array( [[0, -1*self.angMomVec[2], self.angMomVec[1]],
+                        [self.angMomVec[2], 0, -1*self.angMomVec[0]],
+                        [-1*self.angMomVec[1], self.angMomVec[0], 0]])
+    self.W2 = np.dot(self.W, self.W)
+
+
+  def update(self, atoms, atomsOrig, time):
+
+    theta = self.rotateAngle*np.sin(self.rotationFreq*time)
+
+    self.thetas.append(theta % 2*np.pi)
+    # Rodrigues Rotation Formula
+    rotationMat = np.eye(3) + np.sin(theta)*self.W + (1 - np.cos(theta))*self.W2
+    for key in atoms.keys():
+      if key == self.closestC or key == self.closestC4 or "N" in key or "O" in key:
+        continue
+
+      atoms[key].position = np.dot(rotationMat, atomsOrig[key].position)
+
+    self.closestC2 = "O0"
+    print("testDist inUp: ",np.linalg.norm(atomsOrig[self.closestC1].position-atomsOrig[self.closestC2].position))
+    print("testDist inUp: ",np.linalg.norm(atoms[self.closestC1].position-atoms[self.closestC2].position))
+    return atoms
+
+
+
+
+
+"""
+class hotEnsemble:
+
+  def __init__(self, atoms, hotXYZfile):
+    self.startTime      = 0. #ps
+    self.endTime        = 0.2 #ps
+
+    ###  Find carbon closest to N  ###
+    closestC = ''
+    minDist = 10
+    for key,val in atoms.iteritems():
+      if val.atomType != 'C':
+        continue
+      
+      if np.linalg.norm(val.position - atoms['N0'].position) < minDist:
+        minDist   = np.linalg.norm(val.position - atoms['N0'].position)
+        closestC  = key
+
+    ###  Calculate rotation axis  ###
+    self.angMomVec = atoms['N0'].position - atoms[closestC].position
+    self.angMomVec /= np.linalg.norm(self.angMomVec)
+
+    self.W = np.array( [[0, -1*self.angMomVec[2], self.angMomVec[1]],
+                        [self.angMomVec[2], 0, -1*self.angMomVec[0]],
+                        [-1*self.angMomVec[1], self.angMomVec[0], 0]])
+    self.W2 = np.dot(self.W, self.W)
+
+  def update(self, atoms, atomsOrig, time):
+
+    theta = self.rotationFreq*time
+
+    self.thetas.append(theta % 2*np.pi)
+    # Rodrigues Rotation Formula
+    rotationMat = np.eye(3) + np.sin(theta)*self.W + (1 - np.cos(theta))*self.W2
+    #print(atomsOrig["O0"].position - atomsOrig["N0"].position)
+    #print(np.dot(rotationMat,atomsOrig["O0"].position - atomsOrig["N0"].position))
+    atoms["O0"].position = atomsOrig["N0"].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["O0"].position - atomsOrig["N0"].position)
+    atoms["O1"].position = atomsOrig["N0"].position\
+                            + np.dot(
+                                rotationMat, 
+                                atomsOrig["O1"].position - atomsOrig["N0"].position)
+
+    self.distO1.append(np.linalg.norm(atoms["O0"].position-atoms["C1"].position))
+    self.distO2.append(np.linalg.norm(atoms["O1"].position-atoms["C1"].position))
+    print("testDist inUp: ",np.linalg.norm(atoms["O0"].position-atoms["N0"].position))
+    return atoms
+"""
+
 
 if __name__ == "__main__":
 
@@ -302,7 +687,7 @@ if __name__ == "__main__":
         eInd = findItemEnd(line, sInd)
         pos.append(float(line[sInd:eInd]))
 
-      atoms[atomType+str(atomCount[atomType])] = atomStruct(atomType, np.array(pos))
+      #atoms[atomType+str(atomCount[atomType])] = atomStruct(atomType, np.array(pos))
       atomsOrig[atomType+str(atomCount[atomType])] = atomStruct(atomType, np.array(pos))
       atomCount[atomType] += 1
 
@@ -312,23 +697,29 @@ if __name__ == "__main__":
 
   useDelayTimes = False
   delayTimes = np.fromfile(
-      "../../UED/mergeScans/results/timeDelays[30].dat", 
+      "../../UED/mergeScans/results/timeDelays-20180627_1551_bins[30].dat", 
       dtype=np.double)
 
-  dt        = 0.0025  #ps
+  dt        = 0.005  #ps
 
   #########################
   #####  Simulations  #####
   #########################
 
   simulations = {
-      "dissociation_phenyl-N2O" : dissociation(atomsOrig),
-      "rotation_nitrobenzene"   : rotation(atomsOrig),
-      "rotate90_nitrobenzene"   : rotate90(atomsOrig)
+      #"dissociation_nitrosobenzene-O" : dissociation_O(atomsOrig),
+      #"dissociation_phenyl-N2O" : dissociation_NO2(atomsOrig),
+      #"rotation_nitrobenzene"   : rotation(atomsOrig),
+      #"rotate90_nitrobenzene"   : rotate90(atomsOrig)
       #"bending_nitrobenzene"    : bending(atomsOrig)
+      "NOflop_nitrobenzene"     : NO_flop(atomsOrig)
+      #"C0flop_nitrobenzene"     : C0_flop(atomsOrig),
+      #"diagBend_nitrobenzene"   : diag_bend(atomsOrig),
+      #"axisBend_nitrobenzene"   : axis_bend(atomsOrig)
       }
 
   simFolder = "/reg/ued/ana/scratch/nitroBenzene/simulations/"
+  #simFolder = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/"
   groundStateSMS = np.fromfile(
       simFolder+"nitrobenzene_sMsPatternLineOut"+
         "_Qmax-12.376500_Ieb-5.000000_scrnD-4.000000"+
@@ -344,6 +735,8 @@ if __name__ == "__main__":
   #############################
 
   for name, simulation in simulations.iteritems():
+
+    atoms = simulation.atoms
 
     sampleTimes = None
     if (useDelayTimes):
@@ -371,8 +764,8 @@ if __name__ == "__main__":
         break
 
       # Update
+      print("STARTING")
       atoms = simulation.update(atoms, atomsOrig, tm)
-      print("testDist outUp: ",np.linalg.norm(atoms["O0"].position-atoms["C0"].position))
 
       fileName = name+"_time-"+str(tm)
       writeXYZfile(atoms, simFolder+"timeDependent/XYZfiles/", fileName)
@@ -450,8 +843,6 @@ if __name__ == "__main__":
     with open(timeFileName, "wb") as outFile:
       sampleTimes.tofile(outFile)
 
-  """
-  plc.print2d(diffTD,
-      "testing",
-      isFile=False)
-  """
+  #plc.print2d(diffTD,
+  #    "testing",
+  #    isFile=False)
