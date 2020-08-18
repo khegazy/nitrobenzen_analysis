@@ -1,16 +1,16 @@
 import numpy as np
 
-def getSimNames(folderName, Nbins, maxQ, Iebeam, screenDist, elEnergy):
+def getSimNames(folderName, molecule, Nbins, maxQ, Iebeam, screenDist, elEnergy):
   fileNameSuffix = "_Qmax-{:.6f}".format(maxQ)\
       + "_Ieb-{:.6f}".format(Iebeam)\
       + "_scrnD-{:.6f}".format(screenDist)\
       + "_elE-{:.6f}".format(elEnergy)\
       + "_Bins[" + str(Nbins) + "].dat";
 
-  atmDiffFile = folderName + "/nitrobenzene_atmDiffractionPatternLineOut"\
-                  + fileNameSuffix
-  molDiffFile = folderName + "/nitrobenzene_molDiffractionPatternLineOut"\
-                  + fileNameSuffix
+  atmDiffFile = folderName + "/" + molecule\
+                  + "_atmDiffractionPatternLineOut" + fileNameSuffix
+  molDiffFile = folderName + "/" + molecule\
+                  + "_molDiffractionPatternLineOut" + fileNameSuffix
 
   return atmDiffFile, molDiffFile
 
