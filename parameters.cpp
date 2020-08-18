@@ -5,11 +5,14 @@ parameterClass::parameterClass(std::string runName) {
   run = runName;
 
   // Molecule
+  //molecule = finalState3;
   molecule = initialState;
   radicalNames.push_back("nitrobenzene");
   radicalNames.push_back("phenoxyRadical");
   radicalNames.push_back("phenylRadical");
   radicalNames.push_back("nitrosobenzene");
+  radicalNames.push_back("hotGroundState");
+  radicalNames.push_back("hotTripletState");
   molName = radicalNames[molecule];
 
 
@@ -58,9 +61,12 @@ parameterClass::parameterClass(std::string runName) {
   legImageNoiseCut    = 12;
   azmImageNoiseCut    = 105;
 
+  mergeGaussSmoothRef = false;
+  mergeGSmoothSTD     = 5;
+
   testMergeNbootStrap = false;
   useBootstrapSEM     = true;
-  computeBootstrapSEM = true;
+  computeBootstrapSEM = false;
   mergeNbootstrap     = 10000;
 
 
@@ -71,6 +77,10 @@ parameterClass::parameterClass(std::string runName) {
   timeSmearSTD        = 0.025;
   scanImgAzmSTDcut    = 4;
   scanImgAzmRefSTDcut = 4;
+
+  saveMergeIntermediates = false;
+  saveMergeInterFolder = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/intermediates";
+
 
 
   // Analysis Parameters
@@ -131,6 +141,9 @@ parameterClass::parameterClass(std::string runName) {
   readoutEnd           = 1; // Use ratio < 1. Converts to bins at the end
    
   // Centering
+  scanAvgCenter     = true;
+  I0centers         = false;
+  computeCenters    = false;
   centerFxnType     = 3;
   centerShellWidth  = 15; 
   centerSTDcut      = 3;
@@ -141,6 +154,10 @@ parameterClass::parameterClass(std::string runName) {
   meanInds.push_back(185); 
   meanInds.push_back(200); 
   meanInds.push_back(250); 
+
+  I0ellRats.push_back(0.25);    I0ellRats.push_back(0.5);
+  I0ellRats.push_back(0.75);    I0ellRats.push_back(0.85);
+  centerDir = "/reg/ued/ana/scratch/nitroBenzene/preProcessing/centers/";
 
   // Filtering
   order  = 5;
@@ -162,10 +179,10 @@ parameterClass::parameterClass(std::string runName) {
 
   pCorrGaussFilter  = true;
   pCorrButterFilter = false;
-  pCorrQcut         = 8;
+  pCorrQcut         = 10;
   //filterVar         = std::pow(NradAzmBins/3.25, 2);
   //filterVar         = std::pow(NradAzmBins/4, 2);
-  filterVar         = std::pow(NradAzmBins/5, 2);
+  filterVar         = std::pow(NradAzmBins/4, 2);
   pCorrWnHigh       = 0.6;
   pCorrFilterOrder  = 2;
   pCorrFilterType   = "lowpass";
@@ -175,6 +192,7 @@ parameterClass::parameterClass(std::string runName) {
   fillLowQzeros     = true;
   fillLowQsine      = false;
   fillLowQfitTheory = false;
+  useFilledHole     = false;
 
 
   subtractReference = true;
@@ -190,23 +208,27 @@ parameterClass::parameterClass(std::string runName) {
   screenDist      = 4;
   xyzDir          = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/XYZfiles/";
   simOutputDir    = "/reg/ued/ana/scratch/nitroBenzene/simulations/";
+  //simOutputDir    = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulation/diffractionPattern/output/";
+  //simOutputDir    = "/reg/ued/ana/scratch/nitroBenzene/simulations/";
   fsFitOffset     = false;
   fsFilterSMS     = false; 
   fsFilterVar     = std::pow(NradAzmBins/4.5, 2); 
   fitQbegin       = 1.2;
   fitQend         = 8;
   fsQfitBegin     = 1;
-  fsQfitEnd       = 4;
+  fsQfitEnd       = 8;
   fsRfitBegin     = 1.1;
   fsRfitEnd       = 5;
 
-  simHotFinalState  = true;
+  simHotFinalState  = false;
   hotFSrefVar       = filterVar*1.1;
   hotFStdepVar      = filterVar*0.9;
 
-  finalStates.push_back("phenylRadical");
-  finalStates.push_back("phenoxyRadical");
-  finalStates.push_back("nitrosobenzene");
+  //finalStates.push_back("phenylRadical");
+  //finalStates.push_back("phenoxyRadical");
+  //finalStates.push_back("nitrosobenzene");
+  finalStates.push_back("hotGroundState");
+  finalStates.push_back("hotTripletState");
   intermediateStates.push_back("gsEP");
   intermediateStates.push_back("gsNO");
   intermediateStates.push_back("s1min");
@@ -231,7 +253,7 @@ parameterClass::parameterClass(std::string runName) {
   indexPath           = "/reg/neh/home/khegazy/analysis/radialFitIndices/";
 
   pltCent     = false;
-  verbose     = false; 
+  verbose     = true; 
   pltVerbose  = false;
 
 
@@ -636,7 +658,7 @@ parameterClass::parameterClass(std::string runName) {
     imgMatType = "uint16";
 
     // Measurement parameters
-    timeZero = 0.0; //0.3;
+    timeZero = 0.3;
     hasRef = true;
     refStagePosCut = 154.0;
     refSubtractStagePos.push_back((int)(153.0000001*scaleStagePos));
@@ -706,7 +728,7 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    if (false) {
+    if (true) {
       for (int ir=520; ir<660; ir++) {
         for (int ic=443; ic<583; ic++) {
           row = ir - 570;
@@ -753,6 +775,35 @@ parameterClass::parameterClass(std::string runName) {
           }
         }
       }
+
+      rad = 85;
+      for (int ir=0; ir<rad; ir++) {
+        for (int ic=0; ic<rad; ic++) {
+          if (sqrt(ir*ir + ic*ic) < rad) {
+            nanMap[595+ir][488-ic] = NANVAL;
+          }
+        }
+      }
+
+      rad = 14;
+      for (int ir=-1*rad; ir<rad; ir++) {
+        for (int ic=-1*rad; ic<rad; ic++) {
+          if (sqrt(ir*ir + ic*ic) < rad) {
+            nanMap[630+ir][490+ic] = NANVAL;
+          }
+        }
+      }
+
+      int radM = 90;
+      int radm = 45;
+      for (int ir=0; ir<radM; ir++) {
+        for (int ic=0; ic<radM; ic++) {
+          if (494 + ic < 540) continue;
+          if (sqrt(ir*ir + ic*ic) < radM && sqrt(ir*ir + ic*ic) > radm) {
+            nanMap[575-ir][494+ic] = NANVAL;
+          }
+        }
+      }
     }
 
 
@@ -778,6 +829,11 @@ parameterClass::parameterClass(std::string runName) {
     cntrPowellTol = 1;
     cntrFracTol1d = 0.01;
 
+    I0minPixVal = 500;
+    I0approxR   = 166;
+    I0approxC   = 245;
+    gasShiftCut = 0.07;
+
     // Pressure measurements
     pvMap["pressure"]    = "pressureSampleChamber_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
     pvMap["UVcounts"]    = "UVsampleChamberCam_06_29_2018_16_30_40-06_30_2018_16_04_40-16970.dat";
@@ -801,11 +857,20 @@ parameterClass::parameterClass(std::string runName) {
     // Measurement parameters
     timeZero        = 0.0;
     hasRef          = true;
+    NfinalPoints    = 4;
     refStagePosCut  = 154.0; //154.290;
     refSubtractStagePos.push_back((int)(153.0*scaleStagePos));
     refSubtractStagePos.push_back((int)(153.01*scaleStagePos));
-    NfinalPoints    = 4;
+    //refSubtractStagePos.push_back((int)(154.2750*scaleStagePos));
+    //refSubtractStagePos.push_back((int)(154.2850*scaleStagePos));
 
+    // Bad Regions
+    std::pair<float, float> brp;
+    brp.first = 5.3;    brp.second = 5.8;
+    badRegions[1530000].push_back(brp);
+    brp.first = 6.2;    brp.second = 7;
+    badRegions[1530100].push_back(brp);
+ 
     // Bad scans
     /*
     badScans.push_back(9);
@@ -960,7 +1025,7 @@ parameterClass::parameterClass(std::string runName) {
     for (uint ir=0; ir<nanMap.size(); ir++) {
       nanMap[ir].resize(1024, 0);
     }
-    if (false) {
+    if (true) {
       for (int ir=520; ir<660; ir++) {
         for (int ic=443; ic<583; ic++) {
           row = ir - 570;
@@ -1076,6 +1141,11 @@ parameterClass::parameterClass(std::string runName) {
     cntrPowellTol = 1;
     cntrFracTol1d = 0.01;
 
+    I0minPixVal = 500;
+    I0approxR = 155;
+    I0approxC = 243;
+    gasShiftCut = 0.07;
+
     // PV files / variables
     pvMap["pressure"]    = "pressureSampleChamber_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
     pvMap["UVcounts"]    = "UVsampleChamberCam_06_27_2018_15_51_20-06_28_2018_13_27_15-15553.dat";
@@ -1110,17 +1180,30 @@ parameterClass::parameterClass(std::string runName) {
       }
 
       case finalState2: {
-        xyzFiles.push_back("phenyl.xyz");
-        xyzFiles.push_back("nitrogenDioxide.xyz");
+        xyzFiles.push_back("./hotEnsemble/ring.xyz");
+        xyzFiles.push_back("./hotEnsemble/ONO.xyz");
+        //xyzFiles.push_back("phenyl.xyz");
+        //xyzFiles.push_back("nitrogenDioxide.xyz");
         break;
       }
 
       case finalState3: {
-        xyzFiles.push_back("nitrosobenzene.xyz");
+        xyzFiles.push_back("./hotEnsemble/O_dissoc.xyz");
         xyzFiles.push_back("O.xyz");
+        //xyzFiles.push_back("nitrosobenzene.xyz");
+        //xyzFiles.push_back("O.xyz");
         break;
       }
 
+      case finalState4: {
+        xyzFiles.push_back("./hotEnsemble/singlet_aligned.xyz");
+        break;
+      }
+      
+      case finalState5: {
+        xyzFiles.push_back("./hotEnsemble/triplet_aligned.xyz");
+        break;
+      }
       /*
       case intermediateStates: {                    
         // Intermediate States
