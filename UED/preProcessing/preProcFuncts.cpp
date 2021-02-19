@@ -281,7 +281,6 @@ bool ppFunct::getI0RunInfo(
     while ((ent = readdir(dir)) != NULL && !found) {
       string txtName(ent->d_name);
       if (txtName.length() < 10) continue;
-      cout<<"compare "<<txtName.substr(17, 8)<<endl;
       if (txtName.substr(17, 8).compare(fileName) == 0) {
         cout<<"ADDING IO "<<info.imgNum<<"  "<<txtName<<endl;
         I0fileNames[info.imgNum] = folderName + "/" + txtName;
