@@ -1,4 +1,4 @@
-#include "/reg/neh/home5/khegazy/baseTools/UEDanalysis/preProcessing/preProcessing.h"
+#include "/cds/home/k/khegazy/baseTools/UEDanalysis/preProcessing/preProcessing.h"
 
 
 
@@ -141,7 +141,7 @@ monthLengths[12] = 31;
       fpos = fileName.find("/", ipos+4);
       imgInfo.run = fileName.substr(ipos+4, fpos-ipos-4);
     }
-    if (verbose) cout << "\tRUN: " << imgInfo.run;
+    if (verbose) cout << "\tRUN: " << imgInfo.runType << " / " << imgInfo.run;
     if (verbose) cout << "\tSCAN: " << imgInfo.scan;
 
     // Finding file name
@@ -188,6 +188,7 @@ monthLengths[12] = 31;
         curPath = curPath.substr(0, ipos);
         curPath += "images-ANDOR1/";
       }
+
       DIR* dir = opendir(curPath.c_str());
       struct dirent* ent;
       while ((ent = readdir(dir)) != NULL) {
@@ -217,13 +218,11 @@ monthLengths[12] = 31;
         itr.second.time = times[itr.second.imgNum-1];
         imgINFO.push_back(itr.second);
       }
-      cout<<"111"<<endl;
       imgInfoMap.clear();
 
       curScan = imgInfo.scan;
       curRun = imgInfo.run;
       curDate = imgInfo.date;
-      cout<<"222"<<endl;
     }
 
     if (verbose) cout << endl;
@@ -256,6 +255,46 @@ monthLengths[12] = 31;
   return true;
 }
 
+
+bool ppFunct::getI0RunInfo(
+    std::vector<imgProc::imgInfoStruct> imgINFO,
+    std::map<int, std::string> &I0fileNames,
+    std::string runListName, bool verbose) {
+
+  size_t ipos, fpos;
+  std::string fileName, folderName, num;
+
+  for (auto & info : imgINFO) {
+    folderName = info.path.substr(0, info.path.find("/images"));
+    folderName += "/I0";
+    
+    num = to_string(info.imgNum);
+    while (num.size() < 3) {
+      num = "0" + num;
+    }
+    fileName = "ANDOR2_delay-" + num + "-";
+    fileName = to_string((float)info.stagePos/10000.0).substr(0,8);
+
+    DIR* dir = opendir(folderName.c_str());
+    struct dirent* ent;
+    bool found = false;
+    while ((ent = readdir(dir)) != NULL && !found) {
+      string txtName(ent->d_name);
+      if (txtName.length() < 10) continue;
+      cout<<"compare "<<txtName.substr(17, 8)<<endl;
+      if (txtName.substr(17, 8).compare(fileName) == 0) {
+        cout<<"ADDING IO "<<info.imgNum<<"  "<<txtName<<endl;
+        I0fileNames[info.imgNum] = folderName + "/" + txtName;
+        found = true;
+      }
+    }
+    if (!found) {
+      cout<<"COULD NOT FIND FOR " + fileName<<endl;
+    }
+  }
+
+  return true;
+}
 
 
 //////////////////////////////////////////////////////
@@ -323,6 +362,7 @@ void ppFunct::makeRunLists(std::vector<imgProc::imgInfoStruct> &imgINFO,
   // Exiting program so you can use correct runLists
   exit(1);
 }
+
 
 
 
