@@ -2,7 +2,7 @@ import numpy as np
 import copy
 import sys
 sys.path.append('../../../plots/scripts')
-sys.path.append('/reg/neh/home/khegazy/baseTools/UEDanalysis/plots/scripts')
+sys.path.append('/cds/home/k/khegazy/baseTools/UEDanalysis/plots/scripts')
 from plotClass import plotCLASS
 from plotParams import pltParams
 
@@ -14,12 +14,14 @@ plc = plotCLASS()
 plotTsmeared = False
 #runs = ["20180627_1551", "20180629_1630", "20180630_1925", "20180701_0746"]
 runs = ["20180627_1551", "20180629_1630"]
+#runs = ["20180629_1630"]
+#runs = ["20180627_1551"]
 maxX = [1.1, 1.2, 1.1, 1.1]
 #maxX = [2, 1.1, 1.1, 1.1]
 minX = [0, -0.3, -0.2, -0.2]
 #minX = [0, -0.3, -0.2, -0.2]
 smear = "0.025000"
-mergeFolder = "/reg/ued/ana/scratch/nitroBenzene/mergeScans/"
+mergeFolder = "/cds/group/ued/scratch/khegazy/nitrobenzene/mergeScans/"
 wiggles = [0.2, 1.1]
 
 
@@ -32,7 +34,8 @@ selectTimes = [ [0.1, 2.1, 3, 6.5, 12],#[0, 0.5, 1, 4, 8],
 #####  Plotting time dependent diffraction  #####
 #################################################
 colRange = [[-4e-4, 4e-4], [-4e-4, 4e-4], [-3e-3, 3e-3], [-3e-3, 3e-3]]
-sMsColRange = [[-15e-1, 15e-1], [-15e-1, 15e-1], [-3e-2, 3e-2], [-3e-2, 3e-2]]
+colRange = [[-1.5e1, 1.5e1], [-1.7e1, 1.7e1], [-3e-3, 3e-3], [-3e-3, 3e-3]]
+sMsColRange = [[-1e-1, 1e-1], [-1e-1, 1e-1], [-3e-2, 3e-2], [-3e-2, 3e-2]]
 #colRange = [[-3e-3, 3e-3], [-3e-3, 3e-3], [-3e-3, 3e-3], [-3e-3, 3e-3]]
 #colRange = [[-7e-3, 7e-3], [-7e-3, 7e-3], [-7e-3, 7e-3], [-7e-3, 7e-3]]
 #colRange = [-3e-3, 3e-3]
@@ -54,7 +57,7 @@ for i,run in enumerate(runs):
 
 
   timeDelay = np.fromfile("../../../mergeScans/results/timeDelays-"
-        + run + "_bins[" + str(params.timeSteps[i] + 1) + "].dat", np.double)
+        + run + "_bins[" + str(params.NtimeBins[run] + 1) + "].dat", np.double)
 
   print(run)
   print(timeDelay)
@@ -62,7 +65,7 @@ for i,run in enumerate(runs):
   opts["colorRange"] = colRange[i]
   plc.print2d(mergeFolder + "data-" 
           + run + "-azmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-azmAvgDiffFull",
         X=timeDelay,
@@ -70,9 +73,14 @@ for i,run in enumerate(runs):
         options=opts)
 
   opts["colorRange"] = sMsColRange[i]*5
+  print(mergeFolder + "data-" 
+          + run + "-sMsAzmAvgDiff["
+          + str(params.NtimeBins[run]) 
+          + "," + str(params.NradAzmBins) + "].dat")
+
   plc.print2d(mergeFolder + "data-" 
           + run + "-sMsAzmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-sMsAzmAvgDiffFull",
         X=timeDelay,
@@ -84,7 +92,7 @@ for i,run in enumerate(runs):
   """
   plc.print2d("../../results/data-" 
           + run + "_azmAvgSubtractFinalState["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-azmAvgSubtractFinalStateFull",
         X=timeDelay,
@@ -93,7 +101,7 @@ for i,run in enumerate(runs):
 
   tdData, _  = plc.importImage(mergeFolder + "data-"
           + run + "-azmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat")
   np.savetxt("X.txt", timeDelay, delimiter=" ")
   Qaxis = np.linspace(0, 1., tdData.shape[1])*params.QrangeAzm[1]
@@ -102,7 +110,7 @@ for i,run in enumerate(runs):
    
   plc.print2d("../../results/data-" 
           + run + "_sMsSubtractFinalState["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-sMsSubtractFinalStateFull",
         X=timeDelay,
@@ -124,7 +132,7 @@ for i,run in enumerate(runs):
   opts["colorRange"] = colRange[i]
   plc.print2d(mergeFolder + "data-"
           + run + "-azmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-azmAvgDiff",
         X=timeDelay,
@@ -135,7 +143,7 @@ for i,run in enumerate(runs):
   opts["colorRange"] = sMsColRange[i]
   plc.print2d(mergeFolder + "data-"
           + run + "-sMsAzmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-sMsAzmAvgDiff",
         X=timeDelay,
@@ -147,10 +155,10 @@ for i,run in enumerate(runs):
   """
   data,_ = plc.importImage(mergeFolder + "data-"
           + run + "-azmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat")
-  ref1 = np.fromfile("/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-20180627_1551_reference-1530000_bins[555].dat", np.double)
-  ref2 = np.fromfile("/reg/ued/ana/scratch/nitroBenzene/mergeScans/data-20180627_1551_reference-1530100_bins[555].dat", np.double)
+  ref1 = np.fromfile("/cds/group/ued/scratch/khegazy/nitrobenzene/mergeScans/data-20180627_1551_reference-1530000_bins[555].dat", np.double)
+  ref2 = np.fromfile("/cds/group/ued/scratch/khegazy/nitrobenzene/mergeScans/data-20180627_1551_reference-1530100_bins[555].dat", np.double)
   ref1 = np.reshape(ref1, (1,-1))
   ref2 = np.reshape(ref2, (1,-1))
   refs = np.concatenate((ref1, ref2), axis=0)
@@ -170,7 +178,7 @@ for i,run in enumerate(runs):
   """
   plc.print2d("../../results/data-" 
           + run + "_azmAvgSubtractFinalState["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-azmAvgSubtractFinalState",
         X=timeDelay,
@@ -179,7 +187,7 @@ for i,run in enumerate(runs):
  
   plc.print2d("../../results/data-" 
           + run + "_sMsSubtractFinalState["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-sMsSubtractFinalState",
         X=timeDelay,
@@ -200,15 +208,16 @@ for i,run in enumerate(runs):
   opts["xSlice"] = wiggles
   plc.print2d(mergeFolder + "data-"
           + run + "-azmAvgDiff["
-          + str(params.timeSteps[i]) 
+          + str(params.NtimeBins[run]) 
           + "," + str(params.NradAzmBins) + "].dat",
         "../data-" + run + "-azmAvgDiff_wiggles",
         X=timeDelay,
         yRange=params.QrangeAzm,
         options=opts)
 
+print("CHANGE timeSteps to NtimeBins")
 
-
+"""
 td27, _ = plc.importImage(
     params.mergeResultFolder + "data-"
     + runs[0] + "-sMsAzmAvgDiff["
@@ -255,6 +264,7 @@ for i,tm in enumerate(timeDelay29):
       isFile=False,
       options=opts)
 print("PASSED")
+"""
 
 ######################################################
 #####  Plotting time dependent pair correlation  #####
@@ -280,10 +290,10 @@ for i,run in enumerate(runs):
 
 
   timeDelay = np.fromfile("../../../mergeScans/results/timeDelays-" 
-        + run + "_bins[" + str(params.timeSteps[i] + 1) + "].dat", np.double)
+        + run + "_bins[" + str(params.NtimeBins[run] + 1) + "].dat", np.double)
   
   plc.print2d("../../results/data-" + run + "_pairCorrOdd["
-          + str(params.timeSteps[i]) + "," 
+          + str(params.NtimeBins[run]) + "," 
           + str(params.NpairCorrBins) + "].dat",
         "../data-" + run + "_pairCorrFull",
         X=timeDelay,
@@ -294,7 +304,7 @@ for i,run in enumerate(runs):
 
   """
   plc.print2d("../../results/data-" + run + "_pairCorrSubtractFinalState["
-          + str(params.timeSteps[i]) + "," 
+          + str(params.NtimeBins[run]) + "," 
           + str(params.NpairCorrBins) + "].dat",
         "../data-" + run + "_pairCorrSubtractFinalStateFull",
         X=timeDelay,
@@ -314,7 +324,7 @@ for i,run in enumerate(runs):
 
   opts["xSlice"] = [minX[i], maxX[i]]
   plc.print2d("../../results/data-" + run + "_pairCorrOdd["
-          + str(params.timeSteps[i]) + "," 
+          + str(params.NtimeBins[run]) + "," 
           + str(params.NpairCorrBins) + "].dat",
         "../data-" + run + "_pairCorr",
         X=timeDelay,
@@ -323,7 +333,7 @@ for i,run in enumerate(runs):
 
   """
   plc.print2d("../../results/data-" + run + "_pairCorrSubtractFinalState["
-          + str(params.timeSteps[i]) + "," 
+          + str(params.NtimeBins[run]) + "," 
           + str(params.NpairCorrBins) + "].dat",
         "../data-" + run + "_pairCorrSubtractFinalState",
         X=timeDelay,
@@ -341,7 +351,7 @@ for i,run in enumerate(runs):
           options=opts)
 
   tdData, _  = plc.importImage("../../results/data-" + run + "_pairCorrOdd["
-          + str(params.timeSteps[i]) + "," 
+          + str(params.NtimeBins[run]) + "," 
           + str(params.NpairCorrBins) + "].dat")
   Raxis = np.linspace(0, 1., tdData.shape[1])*params.Rrange[1]
   np.savetxt("Raxis.txt", Raxis, delimiter=" ")
@@ -379,7 +389,7 @@ for i,run in enumerate(runs):
   opts["xSlice"] = wiggles
   opts["line"] = [[opts["xSlice"], [1.8, 1.8], "k", 1]]
   plc.print2d("../../results/data-" + run + "_pairCorrOdd["
-          + str(params.timeSteps[i]) + "," 
+          + str(params.NtimeBins[run]) + "," 
           + str(params.NpairCorrBins) + "].dat",
         "../data-" + run + "_pairCorr_wiggles",
         X=timeDelay,
@@ -399,10 +409,10 @@ for i,run in enumerate(runs):
 
 
 
+sys.exit(0)
 ###########################################################
 #####  Plotting Phynel and Nitrosobenzene Simulation  #####
 ###########################################################
-
 
 NdissTimeSteps = "400"
 NrotTimeSteps = "800"
@@ -410,8 +420,7 @@ Nrot90TimeSteps = "80"
 NflopTimeSteps = "200"
 xZoomFine = [0, 1]
 xZoomMed = [0, 2]
-timeDepSimDir = "/reg/ued/ana/scratch/nitroBenzene/simulations/timeDependent/"
-#timeDepSimDir = "/reg/neh/home/khegazy/analysis/nitrobenzene/simulations/timeDependent/"
+timeDepSimDir = "/cds/group/ued/scratch/khegazy/nitrobenzene/simulations/timeDependent/"
 dissTimeDelay = np.fromfile(
       timeDepSimDir + "dissociation_phenyl-N2O_timeDelays["
       + NdissTimeSteps + "].dat", np.double)
